@@ -36,7 +36,7 @@ SSH_KEYS=./dot.ssh.zip
 if [ -f "$SSH_KEYS" ]; then
     printf "${YELLOW}Installing SSH Keys${NC}\n";
     sleep $delay_after_message;
-    run_as_user "rm -rf /home/ibnyusrat/.ssh"
+    run_as_user "rm -rf /home/${target_user}/.ssh"
     run_as_user "touch /home/${target_user}/.zshrc";
     run_as_user "unzip ${SSH_KEYS} -d /home/${target_user}/"
     apt install sshuttle -y
@@ -102,11 +102,11 @@ if [ -f "$SYNERGY_DEB" ]; then
 fi
 
 
-
 # Remove thunderbird
 printf "${RED}Removing thunderbird completely${NC}\n";
 sleep $delay_after_message;
 apt-get purge thunderbird* -y
+
 
 # Some basic shell utlities
 printf "${YELLOW}Installing git, curl and nfs-common.. ${NC}\n";
@@ -120,10 +120,12 @@ printf "${YELLOW}Installing stacer.. ${NC}\n";
 sleep $delay_after_message;
 apt install stacer -y
 
+
 # Enable Nautilus type-head (instead of search):
 printf "${YELLOW}Enabling nautilus typeahead${NC}\n";
 sleep $delay_after_message;
 add-apt-repository ppa:lubomir-brindza/nautilus-typeahead -y
+
 
 #Install Node Version Manager
 printf "${YELLOW}Installing Node Version Manager${NC}\n";
@@ -134,10 +136,13 @@ printf "${YELLOW}Installing Latest LTS Version of NodeJS${NC}\n";
 sleep $delay_after_message;
 run_as_user "source /home/${target_user}/.zshrc && nvm install --lts";
 
+
 #Install zerotier-cli
 printf "${YELLOW}Installing zerotier-cli${NC}\n";
 sleep $delay_after_message;
 curl -s https://install.zerotier.com | zsh
+
+
 
 #Install VIM
 printf "${YELLOW}Installing VIM${NC}\n";
@@ -154,6 +159,7 @@ run_as_user "git clone --depth=1 https://github.com/skywind3000/z.lua";
 run_as_user "mv z.lua /home/${target_user}/.z-lua";
 run_as_user "eval '\$(lua /home/${target_user}/.z-lua/z.lua --init zsh)' >> /home/${target_user}/.zshrc";
 
+
 #Install Pop OS Splash Screen
 printf "${YELLOW}Setting up PopOS Splash Screen${NC}\n";
 sleep $delay_after_message;
@@ -162,10 +168,12 @@ update-alternatives --set default.plymouth /usr/share/plymouth/themes/pop-logo/p
 kernelstub -a splash
 kernelstub -v
 
+
 #Install GIMP
 printf "${YELLOW}Installing GIMP${NC}\n";
 sleep $delay_after_message;
 apt install gimp -y
+
 
 #lm-sensors
 printf "${YELLOW}Installing lm-sensors${NC}\n";
@@ -173,10 +181,12 @@ sleep $delay_after_message;
 apt install lm-sensors -y
 sensors-detect --auto
 
+
 # Gnome tweak tool
 printf "${YELLOW}Installing gnome-tweak-tool${NC}\n";
 sleep $delay_after_message;
 apt install gnome-tweaks -y;
+
 
 #Docker
 printf "${YELLOW}Installing Docker ${NC}\n";
@@ -185,12 +195,14 @@ apt install docker.io -y
 systemctl enable --now docker
 usermod -aG docker $target_user;
 
+
 #Install Open-SSH Server
 printf "${YELLOW}Installing OpenSSH Server ${NC}\n";
 sleep $delay_after_message;
 apt install openssh-server -y
 systemctl enable ssh
 systemctl start ssh
+
 
 #Install Chromium
 printf "${YELLOW}Installing chromium-browser${NC}\n";
@@ -205,7 +217,6 @@ apt install alacritty -y
 run_as_user "mkdir -p ~/.config/alacritty && cp alacritty.yml ~/.config/alacritty/";
 
 
-
 #Change Theme to WhiteSur Dark
 printf "${YELLOW}Installing WhiteSur-dark theme${NC}\n";
 sleep $delay_after_message;
@@ -218,14 +229,34 @@ printf "${YELLOW}WhiteSur was installed, but for better results, download the Us
 sleep $delay_after_message;
 
 
-
-
+#Install prerequisits for Gnome Shell Extentions
 printf "${YELLOW}Install prerequisits for Gnome Shell Extentions${NC}\n";
 sleep $delay_after_message;
 apt install gnome-shell-extensions -y
 apt install chrome-gnome-shell -y
 
 
+#Install VSCode for coding
+printf "${YELLOW}Install VSCode${NC}\n";
+sleep $delay_after_message;
+sudo apt-get install wget gpg
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" |sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+rm -f packages.microsoft.gpg
+
+sudo apt install apt-transport-https
+sudo apt update
+sudo apt install code # or code-insiders
+
+
+#Install Skype using flatpack
+printf "${YELLOW}Install Skype using flatpack${NC}\n";
+sleep $delay_after_message;
+flatpak install flathub com.skype.Client
+
+
+#Install WebStorm and Android Studio
 # printf "${GREEN}Basic settings done, proceeding to install bigger softwares (Like WebStorm, Android Studio etc) using flatpak${NC}\n";
 # sleep $delay_after_message;
 
