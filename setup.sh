@@ -67,6 +67,12 @@ fi
 apt update;
 
 
+#Uninstall default games
+printf "${YELLOW}Uninstall default games.. ${NC}\n";
+sleep $delay_after_message;
+sudo apt purge aisleriot gnome-mahjongg gnome-mines gnome-sudoku -y && sudo apt-get remove remmina -y && sudo apt-get remove transmission-gtk -y && sudo apt-get autoremove -y
+
+
 #Install Z Shell
 printf "${YELLOW}Installing ZSH (Shell)${NC}\n";
 sleep $delay_after_message;
