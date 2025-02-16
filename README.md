@@ -8,6 +8,7 @@ When executed, it installs:
 * sshuttle
 * synergy
 * *Completely removes thunderbird*
+* *Completely removes ubuntu preinstall games*
 * git, curl, nfs-common (used for network attached storage).
 * zsh (with `oh-my-zsh` and `powerlevel10k` theme)
 * lua 5.1 and z.lua (super fast directory navigation tool)
@@ -24,6 +25,8 @@ When executed, it installs:
 * docker
 * Chromium Browser
 * prerequisites of Gnome shell extensions
+* VSCode
+* Skype (flatpak)
 * WebStorm (flatpak)
 * Android Studio (flatpak)
 * WhiteSur GTK+Icon theme.
