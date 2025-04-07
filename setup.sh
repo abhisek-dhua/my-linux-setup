@@ -116,6 +116,13 @@ apt install curl -y
 apt install nfs-common -y
 apt install preload -y
 
+# Git config 
+git config --global pager.branch false
+read -p "Please enter your Git user.name: " git_user_name;
+git config --global user.name "${git_user_name}"
+read -p "Please enter your Git user.email: " git_user_email;
+git config --global user.email "${git_user_email}"
+
 printf "${YELLOW}Installing stacer.. ${NC}\n";
 sleep $delay_after_message;
 apt install stacer -y
@@ -250,10 +257,16 @@ sudo apt update
 sudo apt install code # or code-insiders
 
 
-#Install Skype using flatpack
-printf "${YELLOW}Install Skype using flatpack${NC}\n";
+#Install Skype using snap
+printf "${YELLOW}Install Teams for Linux using snap${NC}\n";
 sleep $delay_after_message;
-flatpak install flathub com.skype.Client
+sudo snap install teams-for-linux
+
+
+#Install Skype using flatpack
+# printf "${YELLOW}Install Skype using flatpack${NC}\n";
+# sleep $delay_after_message;
+# flatpak install flathub com.skype.Client
 
 
 #Install WebStorm and Android Studio
