@@ -116,12 +116,19 @@ apt install curl -y
 apt install nfs-common -y
 apt install preload -y
 
-# Git config 
-git config --global pager.branch false
+
+# Git config
+printf "${YELLOW}Configure Git${NC}\n";
+sleep $delay_after_message; 
 read -p "Please enter your Git user.name: " git_user_name;
 git config --global user.name "${git_user_name}"
 read -p "Please enter your Git user.email: " git_user_email;
 git config --global user.email "${git_user_email}"
+git config --global pager.branch false
+# store git credentials run this command and then run pull request
+# see stored credentionals using `nano ~/.git-credentials`
+git config --global credential.helper store
+
 
 printf "${YELLOW}Installing stacer.. ${NC}\n";
 sleep $delay_after_message;

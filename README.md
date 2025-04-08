@@ -26,6 +26,7 @@ When executed, it installs:
 * Chromium Browser
 * prerequisites of Gnome shell extensions
 * VSCode
+* MS Teams
 * Skype (flatpak)
 * WebStorm (flatpak)
 * Android Studio (flatpak)
@@ -40,4 +41,5 @@ To get the right font in gnome-terminal, you'll need to go to its preferences an
 
 Of course this exact list of softwares isn't probably what fit your needs, but you can fork this repo and use it as a template to adjust based on your own needs.
 
+See stored Git credentionals using `nano ~/.git-credentials`
 
