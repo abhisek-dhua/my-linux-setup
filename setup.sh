@@ -31,7 +31,7 @@ run_as_user() {
 
 
 # run_as_user "touch test.txt"
-
+# SSH setup
 SSH_KEYS=./dot.ssh.zip
 if [ -f "$SSH_KEYS" ]; then
     printf "${YELLOW}Installing SSH Keys${NC}\n";
@@ -101,7 +101,6 @@ printf "${YELLOW}Installing and Setting up Fonts${NC}\n";
 apt-get install powerline -y
 apt install fonts-firacode -y
 run_as_user "mkdir -p /home/${target_user}/.fonts";
-# run_as_user "cp powerline-fonts/* /home/${target_user}/.fonts/";
 run_as_user "find my-fonts -type f \( -iname "*.ttf" -o -iname "*.otf" \) -exec cp {} /home/${target_user}/.fonts/ \;"
 sudo -u ${target_user} fc-cache -fv /home/${target_user}/.fonts
 
@@ -136,9 +135,22 @@ git config --global pager.branch false
 git config --global credential.helper store
 
 
+# Install VIM
+printf "${YELLOW}Installing VIM${NC}\n";
+sleep $delay_after_message;
+apt install vim -y
+
+
+# Install stacer
 printf "${YELLOW}Installing stacer.. ${NC}\n";
 sleep $delay_after_message;
 apt install stacer -y
+
+
+# Install zerotier-cli
+printf "${YELLOW}Installing zerotier-cli${NC}\n";
+sleep $delay_after_message;
+curl -s https://install.zerotier.com | zsh
 
 
 # Enable Nautilus type-head (instead of search):
@@ -147,7 +159,7 @@ sleep $delay_after_message;
 add-apt-repository ppa:lubomir-brindza/nautilus-typeahead -y
 
 
-#Install Node Version Manager
+# Install Node Version Manager
 printf "${YELLOW}Installing Node Version Manager${NC}\n";
 sleep $delay_after_message;
 run_as_user "wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | zsh";
@@ -157,20 +169,7 @@ sleep $delay_after_message;
 run_as_user "source /home/${target_user}/.zshrc && nvm install --lts";
 
 
-#Install zerotier-cli
-printf "${YELLOW}Installing zerotier-cli${NC}\n";
-sleep $delay_after_message;
-curl -s https://install.zerotier.com | zsh
-
-
-
-#Install VIM
-printf "${YELLOW}Installing VIM${NC}\n";
-sleep $delay_after_message;
-apt install vim -y
-
-
-#Install z.lua
+# Install z.lua
 printf "${YELLOW}Setting up z.lua${NC}\n";
 sleep $delay_after_message;
 apt install lua5.1 -y
@@ -180,7 +179,7 @@ run_as_user "mv z.lua /home/${target_user}/.z-lua";
 run_as_user "eval '\$(lua /home/${target_user}/.z-lua/z.lua --init zsh)' >> /home/${target_user}/.zshrc";
 
 
-#Install Pop OS Splash Screen
+# Install Pop OS Splash Screen
 printf "${YELLOW}Setting up PopOS Splash Screen${NC}\n";
 sleep $delay_after_message;
 apt install plymouth-theme-pop-logo
@@ -189,17 +188,33 @@ kernelstub -a splash
 kernelstub -v
 
 
-#Install GIMP
+# Docker
+printf "${YELLOW}Installing Docker ${NC}\n";
+sleep $delay_after_message;
+apt install docker.io -y
+systemctl enable --now docker
+usermod -aG docker $target_user;
+
+
+# lm-sensors
+printf "${YELLOW}Installing lm-sensors${NC}\n";
+sleep $delay_after_message;
+apt install lm-sensors -y
+sensors-detect --auto
+
+
+# Install GIMP
 printf "${YELLOW}Installing GIMP${NC}\n";
 sleep $delay_after_message;
 apt install gimp -y
 
 
-#lm-sensors
-printf "${YELLOW}Installing lm-sensors${NC}\n";
+# Install Open-SSH Server
+printf "${YELLOW}Installing OpenSSH Server ${NC}\n";
 sleep $delay_after_message;
-apt install lm-sensors -y
-sensors-detect --auto
+apt install openssh-server -y
+systemctl enable ssh
+systemctl start ssh
 
 
 # Gnome tweak tool
@@ -208,29 +223,13 @@ sleep $delay_after_message;
 apt install gnome-tweaks -y;
 
 
-#Docker
-printf "${YELLOW}Installing Docker ${NC}\n";
-sleep $delay_after_message;
-apt install docker.io -y
-systemctl enable --now docker
-usermod -aG docker $target_user;
-
-
-#Install Open-SSH Server
-printf "${YELLOW}Installing OpenSSH Server ${NC}\n";
-sleep $delay_after_message;
-apt install openssh-server -y
-systemctl enable ssh
-systemctl start ssh
-
-
 #Install Chromium
 printf "${YELLOW}Installing chromium-browser${NC}\n";
 sleep $delay_after_message;
 apt install chromium-browser -y
 
 
-#Install Alacritty
+#Install Alacritty (terminal)
 printf "${YELLOW}Installing Alacritty (terminal)${NC}\n";
 sleep $delay_after_message;
 apt install alacritty -y
@@ -270,7 +269,7 @@ sudo apt update
 sudo apt install code # or code-insiders
 
 
-#Install Skype using snap
+#Install MS Teams using snap
 printf "${YELLOW}Install Teams for Linux using snap${NC}\n";
 sleep $delay_after_message;
 sudo snap install teams-for-linux

@@ -4,33 +4,34 @@ I run this script on a fresh install of Linux, (Mostly Debian based distribution
 
 When executed, it installs: 
 
+* sshuttle
 * flatpak
 * synergy
 * *Completely removes thunderbird*
 * *Completely removes ubuntu preinstall games*
 * zsh (with `oh-my-zsh` and `powerlevel10k` theme)
 * git, curl, gedit, nfs-common (used for network attached storage).
-* sshuttle
+* vim
+* stacer
+* zerotier-cli 
+* nautilus (with typeahead support)
+* nvm (node version manager) and use latest LTS version
 * lua 5.1 and z.lua (super fast directory navigation tool)
 * PopOS Animated Splash Screen (Looks like this: https://www.reddit.com/r/pop_os/comments/jwn4se/psa_pop_os_boot_popup_logo/)
-* nautilus (with typeahead support)
-* openssh-server
-* alacritty terminal
-* nvm (node version manager) and latest LTS version of NodeJS and NPM
-* zerotier-cli 
-* vim
-* GIMP (flatpak)
-* lm-sensors
-* gnome-tweak-tool
 * docker
+* lm-sensors
+* GIMP (flatpak)
+* openssh-server
+* gnome-tweak-tool
 * Chromium Browser
+* alacritty terminal
+* WhiteSur GTK+Icon theme.
 * prerequisites of Gnome shell extensions
 * VSCode
 * MS Teams
 * Skype (flatpak)
 * WebStorm (flatpak)
 * Android Studio (flatpak)
-* WhiteSur GTK+Icon theme.
 
 And finally upgrades all the packages in the system to the latest versions.
 
