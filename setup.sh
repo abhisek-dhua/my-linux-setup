@@ -50,6 +50,7 @@ else
 	sleep 10;
 fi
 
+# Install flatpack
 REQUIRED_PKG="flatpak"
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG|grep "install ok installed")
 echo Checking for $REQUIRED_PKG: $PKG_OK
@@ -67,33 +68,7 @@ fi
 apt update;
 
 
-#Uninstall default games
-printf "${RED}Uninstall default games.. ${NC}\n";
-sleep $delay_after_message;
-sudo apt purge aisleriot gnome-mahjongg gnome-mines gnome-sudoku -y && sudo apt-get remove remmina -y && sudo apt-get remove transmission-gtk -y && sudo apt-get autoremove -y
-
-
-#Install Z Shell
-printf "${YELLOW}Installing ZSH (Shell)${NC}\n";
-sleep $delay_after_message;
-apt install zsh -y
-sleep 2;
-chsh -s /bin/zsh
-
-
-#Setting up Powerline an Firacode fornt
-printf "${YELLOW}Installing and Setting up Fonts${NC}\n";
-apt-get install powerline -y
-apt install fonts-firacode -y
-run_as_user "mkdir -p /home/${target_user}/.fonts";
-run_as_user "cp powerline-fonts/* /home/${target_user}/.fonts/";
-
-run_as_user "git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git /home/${target_user}/.oh-my-zsh";
-run_as_user "cat /home/${target_user}/.oh-my-zsh/templates/zshrc.zsh-template >> /home/${target_user}/.zshrc";
-run_as_user "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/${target_user}/.oh-my-zsh/custom/themes/powerlevel10k";
-run_as_user "sed -i 's/robbyrussell/powerlevel10k\/powerlevel10k/' /home/${target_user}/.zshrc";
-run_as_user "echo 'bindkey -v' >> /home/${target_user}/.zshrc";
-
+# Install Synergy
 SYNERGY_DEB=./synergy_1.11.0.rc2_amd64.deb
 if [ -f "$SYNERGY_DEB" ]; then
     printf "${YELLOW}Installing Synergy${NC}\n";
@@ -102,18 +77,48 @@ if [ -f "$SYNERGY_DEB" ]; then
     apt-get install -fy;
 fi
 
-
 # Remove thunderbird
 printf "${RED}Removing thunderbird completely${NC}\n";
 sleep $delay_after_message;
 apt-get purge thunderbird* -y
 
+# Uninstall default games
+printf "${RED}Uninstall default games.. ${NC}\n";
+sleep $delay_after_message;
+sudo apt purge aisleriot gnome-mahjongg gnome-mines gnome-sudoku -y && sudo apt-get remove remmina -y && sudo apt-get remove transmission-gtk -y && sudo apt-get autoremove -y
+
+
+# Install zsh Shell
+printf "${YELLOW}Installing ZSH (Shell)${NC}\n";
+sleep $delay_after_message;
+apt install zsh -y
+sleep 2;
+chsh -s /bin/zsh
+
+
+# Setting up Powerline an Firacode fornt
+printf "${YELLOW}Installing and Setting up Fonts${NC}\n";
+apt-get install powerline -y
+apt install fonts-firacode -y
+run_as_user "mkdir -p /home/${target_user}/.fonts";
+# run_as_user "cp powerline-fonts/* /home/${target_user}/.fonts/";
+run_as_user "find my-fonts -type f \( -iname "*.ttf" -o -iname "*.otf" \) -exec cp {} /home/${target_user}/.fonts/ \;"
+sudo -u ${target_user} fc-cache -fv /home/${target_user}/.fonts
+
+
+run_as_user "git clone --depth=1 https://github.com/robbyrussell/oh-my-zsh.git /home/${target_user}/.oh-my-zsh";
+run_as_user "cat /home/${target_user}/.oh-my-zsh/templates/zshrc.zsh-template >> /home/${target_user}/.zshrc";
+run_as_user "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/${target_user}/.oh-my-zsh/custom/themes/powerlevel10k";
+run_as_user "sed -i 's/robbyrussell/powerlevel10k\/powerlevel10k/' /home/${target_user}/.zshrc";
+run_as_user "echo 'bindkey -v' >> /home/${target_user}/.zshrc";
+
 
 # Some basic shell utlities
-printf "${YELLOW}Installing git, curl and nfs-common.. ${NC}\n";
+printf "${YELLOW}Installing git, curl, gedit and nfs-common.. ${NC}\n";
 sleep $delay_after_message;
 apt install git -y
 apt install curl -y
+apt install gedit -y
 apt install nfs-common -y
 apt install preload -y
 

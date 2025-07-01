@@ -5,12 +5,12 @@ I run this script on a fresh install of Linux, (Mostly Debian based distribution
 When executed, it installs: 
 
 * flatpak
-* sshuttle
 * synergy
 * *Completely removes thunderbird*
 * *Completely removes ubuntu preinstall games*
-* git, curl, nfs-common (used for network attached storage).
 * zsh (with `oh-my-zsh` and `powerlevel10k` theme)
+* git, curl, gedit, nfs-common (used for network attached storage).
+* sshuttle
 * lua 5.1 and z.lua (super fast directory navigation tool)
 * PopOS Animated Splash Screen (Looks like this: https://www.reddit.com/r/pop_os/comments/jwn4se/psa_pop_os_boot_popup_logo/)
 * nautilus (with typeahead support)
