@@ -109,7 +109,7 @@ backup_existing() {
         while true; do
             read -p "What would you like to do? (y/n/f/c): " -n 1 -r
             echo
-            case $REPLY in
+            case $choice in
                 [Yy])
                     sudo cp /opt/cursor.appimage /opt/cursor.appimage.backup.$(date +%Y%m%d_%H%M%S)
                     print_status "Backup created: /opt/cursor.appimage.backup.$(date +%Y%m%d_%H%M%S)"
@@ -152,7 +152,7 @@ check_appimage_in_use() {
         while true; do
             read -p "What would you like to do? (k/c): " -n 1 -r
             echo
-            case $REPLY in
+            case $choice in
                 [Kk])
                     print_status "Killing all processes using /opt/cursor.appimage..."
                     sudo fuser -k /opt/cursor.appimage
@@ -318,9 +318,8 @@ install_cursor() {
         echo "  1) Update instead"
         echo "  2) Continue with fresh installation (not recommended)"
         echo "  3) Cancel"
-        read -p "Choose an option (1/2/3): " -n 1 -r
-        echo
-        case $REPLY in
+        read -p "Choose an option (1/2/3): " choice
+        case $choice in
             1)
                 update_cursor
                 return
@@ -345,26 +344,27 @@ install_cursor() {
     echo "  3) Install via AppImage (portable)"
     echo "  4) Cancel"
     echo
-    read -p "Choose an option (1/2/3/4): " -n 1 -r
-    echo
+    read -p "Choose an option (1/2/3/4): " choice
     
-    case $REPLY in
-        1)
-            install_via_apt
-            ;;
-        2)
-            install_via_deb
-            ;;
-        3)
-            install_via_appimage
-            ;;
-        4)
-            print_status "Installation cancelled."
-            ;;
-        *)
-            print_error "Invalid option."
-            ;;
-    esac
+    case $choice in
+            1)
+                install_via_apt
+                ;;
+            2)
+                install_via_deb
+                ;;
+            3)
+                install_via_appimage
+                ;;
+            4)
+                print_status "Installation cancelled."
+                return
+                ;;
+            *)
+                print_error "Invalid option."
+                return
+                ;;
+        esac
 }
 
 # Function to update cursor
@@ -389,7 +389,7 @@ update_cursor() {
             echo "  2) Cancel"
             read -p "Choose an option (1/2): " -n 1 -r
             echo
-            case $REPLY in
+            case $choice in
                 1)
                     install_via_appimage
                     ;;
@@ -406,7 +406,7 @@ update_cursor() {
             echo "Would you like to install it instead?"
             read -p "Install now? (y/n): " -n 1 -r
             echo
-            case $REPLY in
+            case $choice in
                 [Yy])
                     install_cursor
                     ;;
@@ -434,7 +434,7 @@ uninstall_cursor() {
     read -p "Are you sure you want to continue? (y/n): " -n 1 -r
     echo
     
-    case $REPLY in
+    case $choice in
         [Yy])
             ;;
         *)
@@ -479,21 +479,17 @@ main() {
     # Show menu
     while true; do
         show_menu
-        read -p "Enter your choice (1-4): " -n 1 -r
-        echo
+        read -p "Please enter your choice (1-4): " choice
         
-        case $REPLY in
+        case $choice in
             1)
                 install_cursor
-                return
                 ;;
             2)
                 update_cursor
-                return
                 ;;
             3)
                 uninstall_cursor
-                return
                 ;;
             4)
                 print_status "Goodbye!"
@@ -504,6 +500,10 @@ main() {
                 echo
                 ;;
         esac
+        
+        echo ""
+        read -p "Press Enter to continue..."
+        echo ""
     done
 }
 

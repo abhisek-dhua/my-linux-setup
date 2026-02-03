@@ -5,6 +5,17 @@
 
 set -e
 
+# Ensure npm and node are in PATH (especially for nvm users)
+if [ -d "$HOME/.nvm" ]; then
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+fi
+
+# Add common npm global paths to PATH
+export PATH="$HOME/.nvm/versions/node/*/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 # Colors for better readability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -32,11 +43,32 @@ print_error() {
 }
 
 check_opencode_installed() {
+    # Try multiple detection methods for better reliability
+    
+    # Method 1: command -v
     if command -v opencode &> /dev/null; then
-        return 0
-    else
-        return 1
+        # Additional check: ensure the command actually works
+        if opencode --version &> /dev/null || opencode --help &> /dev/null; then
+            return 0
+        fi
     fi
+    
+    # Method 2: Direct path search for nvm
+    local nvm_opencode="$HOME/.nvm/versions/node/*/bin/opencode"
+    for path in $nvm_opencode; do
+        if [ -x "$path" ]; then
+            return 0
+        fi
+    done
+    
+    # Method 3: Check npm global packages directly
+    if command -v npm &> /dev/null; then
+        if npm list -g opencode-ai &> /dev/null; then
+            return 0
+        fi
+    fi
+    
+    return 1
 }
 
 install_opencode() {
@@ -102,6 +134,54 @@ uninstall_opencode() {
     print_status "OpenCode AI uninstallation complete!"
 }
 
+clear_cache_only() {
+    print_status "Clearing OpenCode AI cache and configuration..."
+    
+    # Remove cache and config directories only (keeping the application)
+    local dirs=(
+        "$HOME/.cache/opencode"
+        "$HOME/.cache/OpenCode"
+        "$HOME/.config/opencode"
+    )
+    
+    for dir in "${dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            print_status "Clearing: $dir"
+            rm -rf "$dir"
+        else
+            print_warning "Directory not found: $dir"
+        fi
+    done
+    
+    print_status "Cache and configuration cleared successfully!"
+}
+
+update_opencode() {
+    print_status "Updating OpenCode AI..."
+    
+    if ! check_opencode_installed; then
+        print_error "OpenCode AI is not installed. Please install it first."
+        return 1
+    fi
+    
+    # Check if npm is available
+    if ! command -v npm &> /dev/null; then
+        print_error "npm is not installed. Cannot update."
+        exit 1
+    fi
+    
+    print_status "Updating to latest version..."
+    npm update -g opencode-ai
+    
+    if [ $? -eq 0 ]; then
+        print_status "OpenCode AI updated successfully!"
+        print_status "New version: $(opencode --version 2>/dev/null || echo 'Unable to get version')"
+    else
+        print_error "Update failed!"
+        exit 1
+    fi
+}
+
 show_menu() {
     print_header
     
@@ -114,15 +194,17 @@ show_menu() {
     echo "What would you like to do?"
     echo "1) Install OpenCode AI"
     echo "2) Uninstall OpenCode AI"
-    echo "3) Check installation status"
-    echo "4) Exit"
+    echo "3) Clear cache and config only"
+    echo "4) Update OpenCode AI"
+    echo "5) Check installation status"
+    echo "6) Exit"
     echo ""
 }
 
 main() {
     while true; do
         show_menu
-        read -p "Please enter your choice (1-4): " choice
+        read -p "Please enter your choice (1-6): " choice
         
         case $choice in
             1)
@@ -146,19 +228,31 @@ main() {
                 fi
                 ;;
             3)
-                if check_opencode_installed; then
-                    print_status "OpenCode AI is installed"
-                    print_status "Version: $(opencode --version 2>/dev/null || echo 'Unable to get version')"
-                else
-                    print_warning "OpenCode AI is not installed"
-                fi
+                clear_cache_only
                 ;;
             4)
+                update_opencode
+                ;;
+            5)
+                if check_opencode_installed; then
+                    print_status "OpenCode AI is installed"
+                    local version=$(opencode --version 2>/dev/null || npm list -g opencode-ai 2>/dev/null | grep opencode-ai | sed 's/.*@//' || echo 'Unable to get version')
+                    print_status "Version: $version"
+                    print_status "Location: $(which opencode 2>/dev/null || echo 'Not in PATH')"
+                else
+                    print_warning "OpenCode AI is not installed"
+                    if command -v npm &> /dev/null; then
+                        print_status "Checking npm global packages..."
+                        npm list -g opencode-ai 2>/dev/null || print_status "opencode-ai not found in npm global packages"
+                    fi
+                fi
+                ;;
+            6)
                 print_status "Goodbye!"
                 exit 0
                 ;;
             *)
-                print_error "Invalid choice! Please enter 1-4."
+                print_error "Invalid choice! Please enter 1-6."
                 ;;
         esac
         
