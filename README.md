@@ -9,12 +9,13 @@ A comprehensive one-time setup script that installs and configures your entire d
 
 **Features:**
 - 🐚 **Zsh + Oh My Zsh** with autosuggestions & syntax highlighting
+- 🎨 **Agnoster theme** with custom color scheme (user/dir/git/venv segments)
 - ⚡ **NVM + Node.js** + AI CLI tools (Cline, OpenCode) + Angular CLI
 - 🐍 **Python + Pyenv** for version management
 - 🐳 **Docker** with user permissions
 - 🖥️ **GNOME Terminal** configuration (FiraCode Nerd Font, dark theme, transparency)
 - 🌐 **Google Chrome** & 🧠 **VS Code** installation
-- 🔤 **FiraCode Nerd Font** auto-download
+- 🔤 **FiraCode Nerd Font** auto-download with fallback source
 - 🖱️ **Touchpad I2C Fix** for ELAN devices (prevents intermittent disconnects)
 - 🔐 **Git configuration** setup
 - 🧹 System cleanup

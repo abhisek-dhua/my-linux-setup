@@ -129,12 +129,31 @@ FONT_URLS=(
   "https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/FiraCode/Bold/FiraCodeNerdFont-Bold.ttf"
 )
 
-for url in "${FONT_URLS[@]}"; do
-  filename=$(basename "$url")
-  if [[ ! -f "$FONT_DIR/$filename" ]]; then
-    wget -q --timeout=30 "$url" -O "$FONT_DIR/$filename" 2>/dev/null || echo "⚠️ Failed to download $filename"
-  fi
-done
+FALLBACK_URLS=(
+  "https://raw.githubusercontent.com/abhisek-dhua/my-linux-setup/main/my-fonts/FiraCodeNerf/FiraCodeNerdFont-Regular.ttf"
+  "https://raw.githubusercontent.com/abhisek-dhua/my-linux-setup/main/my-fonts/FiraCodeNerf/FiraCodeNerdFont-Medium.ttf"
+  "https://raw.githubusercontent.com/abhisek-dhua/my-linux-setup/main/my-fonts/FiraCodeNerf/FiraCodeNerdFont-SemiBold.ttf"
+  "https://raw.githubusercontent.com/abhisek-dhua/my-linux-setup/main/my-fonts/FiraCodeNerf/FiraCodeNerdFont-Bold.ttf"
+)
+
+download_fonts() {
+  local urls=("$@")
+  for url in "${urls[@]}"; do
+    filename=$(basename "$url")
+    if [[ ! -f "$FONT_DIR/$filename" ]]; then
+      wget -q --timeout=30 "$url" -O "$FONT_DIR/$filename" 2>/dev/null || echo "⚠️ Failed to download $filename"
+    fi
+  done
+}
+
+download_fonts "${FONT_URLS[@]}"
+
+if ls "$FONT_DIR"/FiraCodeNerdFont-*.ttf &>/dev/null; then
+  echo "✅ FiraCode Nerd Font installed"
+else
+  echo "⚠️ Primary font source failed, trying fallback..."
+  download_fonts "${FALLBACK_URLS[@]}"
+fi
 
 fc-cache -f >/dev/null 2>&1
 )
@@ -179,7 +198,22 @@ grep -q "^ZSH_THEME=" ~/.zshrc \
   && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="agnoster"/' ~/.zshrc \
   || echo 'ZSH_THEME="agnoster"' >> ~/.zshrc
 
-grep -q "FiraCode" ~/.zshrc || echo 'export FIRA_CODE="FiraCode-Regular"' >> ~/.zshrc
+grep -q "FiraCode" ~/.zshrc || echo 'export FIRA_CODE="FiraCode Nerd Font"' >> ~/.zshrc
+
+grep -q "PROMPT_SEGMENT_USER_BG" ~/.zshrc || cat >> ~/.zshrc << 'EOF'
+
+# Agnoster Theme Colors
+PROMPT_SEGMENT_USER_BG="blue"
+PROMPT_SEGMENT_USER_FG="white"
+PROMPT_SEGMENT_DIR_BG="cyan"
+PROMPT_SEGMENT_DIR_FG="white"
+PROMPT_SEGMENT_GIT_CLEAN_BG="green"
+PROMPT_SEGMENT_GIT_DIRTY_BG="yellow"
+PROMPT_SEGMENT_GIT_FG="black"
+PROMPT_SEGMENT_VENV_BG="magenta"
+PROMPT_SEGMENT_VENV_FG="white"
+PROMPT_SEGMENT_TIME_BG="default"
+EOF
 
 grep -q "^plugins=" ~/.zshrc \
   && sed -i 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting)/' ~/.zshrc \
