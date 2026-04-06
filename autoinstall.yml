@@ -1,0 +1,82 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: ubuntu-pc
+    username: abhisek
+    password: "$6$exDY1mhS4KUYCEQ2$zmn9ToZwTKLhCw.b4/b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kxKwuX1kqLG/ygbJ1f8wxED22bTL4F46P0"
+  ssh:
+    install-server: true
+    allow-pw: true
+  storage:
+    layout:
+      name: direct
+  packages:
+    - build-essential
+    - curl
+    - wget
+    - git
+    - unzip
+    - vim
+    - neovim
+    - software-properties-common
+    - apt-transport-https
+    - ca-certificates
+    - gnupg
+    - lsb-release
+    - net-tools
+    - dconf-cli
+    - fonts-powerline
+    - xclip
+    - xsel
+    - vlc
+    - zsh
+    - docker.io
+    - docker-compose
+    - libinput-tools
+    - python3
+    - python3-pip
+    - python3-venv
+    - make
+    - libssl-dev
+    - zlib1g-dev
+    - libbz2-dev
+    - libreadline-dev
+    - libsqlite3-dev
+    - llvm
+    - libncursesw5-dev
+    - xz-utils
+    - tk-dev
+    - libxml2-dev
+    - libxmlsec1-dev
+    - libffi-dev
+    - liblzma-dev
+  late-commands:
+    # Enable Docker
+    - curtin in-target --target=/ -- systemctl enable docker
+    - curtin in-target --target=/ -- usermod -aG docker abhisek
+    
+    # Apply Touchpad I2C Fix
+    - |
+      curtin in-target --target=/ -- bash -c '
+        sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 i2c_hid.reset_descriptor=1\"/" /etc/default/grub
+        update-grub
+      '
+    - curtin in-target --target=/ -- mkdir -p /home/abhisek/.local/bin
+    - |
+      curtin in-target --target=/ -- bash -c 'cat > /home/abhisek/.local/bin/touchpad-reload << EOF
+      #!/bin/bash
+      sudo modprobe -r i2c_hid_acpi i2c_hid hid_multitouch
+      sudo modprobe i2c_hid
+      EOF'
+    - curtin in-target --target=/ -- chmod +x /home/abhisek/.local/bin/touchpad-reload
+    
+    # Download & Run Setup Script (for NVM, Oh My Zsh, Fonts, Chrome, VS Code)
+    - curtin in-target --target=/ -- bash -c 'curl -fsSL https://raw.githubusercontent.com/your-repo/setup.sh -o /tmp/setup.sh'
+    - curtin in-target --target=/ -- bash -c 'chmod +x /tmp/setup.sh && /tmp/setup.sh'
+    
+    # Cleanup
+    - curtin in-target --target=/ -- apt autoremove -y

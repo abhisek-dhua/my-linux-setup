@@ -1,46 +1,65 @@
-# Automatic setup script for Linux (Debian based distros with gnome)
+# Ubuntu Dev Setup Scripts
 
-I run this script on a fresh install of Linux, (Mostly Debian based distributions like Ubuntu or Pop!_OS etc) so that it sets everything up for me and I am ready to work..
+Automated scripts for setting up a complete Ubuntu development environment with essential tools, configurations, and utilities.
 
-When executed, it installs: 
+## 📁 Scripts Overview
 
-* sshuttle
-* flatpak
-* synergy
-* *Completely removes thunderbird*
-* *Completely removes ubuntu preinstall games*
-* zsh (with `oh-my-zsh` and `powerlevel10k` theme)
-* git, curl, gedit, nfs-common (used for network attached storage).
-* vim
-* stacer
-* zerotier-cli 
-* nautilus (with typeahead support)
-* nvm (node version manager) and use latest LTS version
-* lua 5.1 and z.lua (super fast directory navigation tool)
-* PopOS Animated Splash Screen (Looks like this: https://www.reddit.com/r/pop_os/comments/jwn4se/psa_pop_os_boot_popup_logo/)
-* docker
-* lm-sensors
-* GIMP (flatpak)
-* openssh-server
-* gnome-tweak-tool
-* Chromium Browser
-* alacritty terminal
-* WhiteSur GTK+Icon theme.
-* prerequisites of Gnome shell extensions
-* VSCode
-* MS Teams
-* Skype (flatpak)
-* WebStorm (flatpak)
-* Android Studio (flatpak)
+### 1. `setup.sh` - Ultimate Ubuntu Dev Setup
+A comprehensive one-time setup script that installs and configures your entire development environment.
 
-And finally upgrades all the packages in the system to the latest versions.
+**Features:**
+- 🐚 **Zsh + Oh My Zsh** with autosuggestions & syntax highlighting
+- ⚡ **NVM + Node.js** + AI CLI tools (Cline, OpenCode) + Angular CLI
+- 🐍 **Python + Pyenv** for version management
+- 🐳 **Docker** with user permissions
+- 🖥️ **GNOME Terminal** configuration (FiraCode Nerd Font, dark theme, transparency)
+- 🌐 **Google Chrome** & 🧠 **VS Code** installation
+- 🔤 **FiraCode Nerd Font** auto-download
+- 🖱️ **Touchpad I2C Fix** for ELAN devices (prevents intermittent disconnects)
+- 🔐 **Git configuration** setup
+- 🧹 System cleanup
+- 📝 **Vim, Neovim, VLC, Tmux** installed by default
+- 🛠️ **Optional utilities** (htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip-full, gnome-tweaks, trash-cli, flatpak) — prompted during setup
 
-To run the script, simply type `sudo -i` enter your password. Navigate to the directory where you cloned the repository and then run `./script.sh`.
-After the script runs you should run `chsh` in terminal and after entering your password, type: `/bin/zsh` to change shell from Bash to ZSH. Then restart the computer for the change to take effect. Once you restart and open terminal, you will be prompted to configure the `powerlevel0k` theme. Just follow the prompts and set according to your liking.If you want to re-configure powerlevel0k then use command `pk10 configure`. After successful config edit `.p10k.zsh` file using `nano ~/.p10k.zsh or code ~/.p10k.zsh` and comment `(( $#branch > 32 )) && branch[13,-13]="…"` this line for show full branch name.
+**Usage:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
 
-To get the right font in gnome-terminal, you'll need to go to its preferences and uncheck the custom font checkbox, then open gnome-tweak-tool and under the monotype font, select: MesloLGS NF. This way the icons will look super nice. Alternately you can just use the `alacrity` terminal and that would probably look OK automatically.
+### 2. `ssh-key-manager.sh` - SSH Key Manager
+Interactive menu-driven tool for managing SSH keys.
 
-Of course this exact list of softwares isn't probably what fit your needs, but you can fork this repo and use it as a template to adjust based on your own needs.
+**Features:**
+- 🔑 **Add SSH key** → restore from `ssh.zip` or create new
+- 💾 **Backup** → save current keys to `ssh.zip`
+- 👁️ **View public key** → display all public keys
+- 🗑️ **Remove keys** → safely delete with automatic backup
+- 🤖 **Auto-add to ssh-agent**
 
-See stored Git credentionals using `nano ~/.git-credentials`
+**Usage:**
+```bash
+chmod +x ssh-key-manager.sh
+./ssh-key-manager.sh
+```
 
+## 🚀 Quick Start
+
+1. Clone this repository
+2. Run the main setup script:
+   ```bash
+   ./setup.sh
+   ```
+3. Manage SSH keys:
+   ```bash
+   ./ssh-key-manager.sh
+   ```
+
+## 📋 Requirements
+- Ubuntu 20.04+ (or Debian-based distro)
+- Internet connection
+- Sudo privileges
+
+## 🛠️ Customization
+- Edit `setup.sh` to add/remove packages or change configurations
+- Place your existing SSH keys in `ssh.zip` to restore them automatically
