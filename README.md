@@ -7,20 +7,27 @@ Automated scripts for setting up a complete Ubuntu development environment with 
 ### 1. `setup.sh` - Ultimate Ubuntu Dev Setup
 A comprehensive one-time setup script that installs and configures your entire development environment.
 
-**Features:**
-- 🐚 **Zsh + Oh My Zsh** with autosuggestions & syntax highlighting
-- 🎨 **Agnoster theme** with custom color scheme (user/dir/git/venv segments)
-- ⚡ **NVM + Node.js** + AI CLI tools (Cline, OpenCode) + Angular CLI
-- 🐍 **Python + Pyenv** for version management
-- 🐳 **Docker** with user permissions
-- 🖥️ **GNOME Terminal** configuration (FiraCode Nerd Font, dark theme, transparency)
-- 🌐 **Google Chrome** & 🧠 **VS Code** installation
-- 🔤 **FiraCode Nerd Font** auto-download with fallback source
-- 🖱️ **Touchpad I2C Fix** for ELAN devices (prevents intermittent disconnects)
-- 🔐 **Git configuration** setup
-- 🧹 System cleanup
-- 📝 **Vim, Neovim, VLC, Tmux** installed by default
-- 🛠️ **Optional utilities** (htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip-full, gnome-tweaks, trash-cli, flatpak) — prompted during setup
+**Features (runs in order):**
+
+| # | Section | Description |
+|---|---------|-------------|
+| 1 | 👤 User Configuration | Username detection + zsh shell prompt |
+| 2 | 🔄 System Update | Full `apt update && apt upgrade` |
+| 3 | 🧩 Essentials | build-essential, curl, wget, git, vim, neovim, vlc, tmux |
+| 4 | 💻 Drivers | `ubuntu-drivers autoinstall` |
+| 5 | 🖱️ Touchpad I2C Fix | ELAN device disconnect fix + `touchpad-reload` command |
+| 6 | 🐳 Docker | docker.io + user permissions |
+| 7 | 🔤 Fonts | FiraCode Nerd Font (auto-download with fallback) |
+| 8 | 💻 Zsh + Oh My Zsh | Agnoster theme, autosuggestions, syntax highlighting |
+| 9 | ⚡ NVM + Node | Latest LTS Node + Cline, OpenCode, Angular CLI |
+| 10 | 🐍 Python + Pyenv | python3 + pyenv with dev dependencies |
+| 11 | 🖥 GNOME Terminal | FiraCode font, dark theme, transparency |
+| 12 | 🌐 Google Chrome | Official repo (auto-updates via apt) |
+| 13 | 🧠 VS Code | Official repo (auto-updates via apt) |
+| 14 | 🔐 Git Config | Username/email setup *(type `s` to skip)* |
+| 15 | 🚗 Antigravity | Google Antigravity app with apt repo |
+| 16 | 📥 Free Download Manager | FDM with apt repo (auto-configured by .deb) |
+| 17 | 🛠️ Optional Utilities | *(prompted)* htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip, gnome-tweaks, flatpak |
 
 **Usage:**
 ```bash
