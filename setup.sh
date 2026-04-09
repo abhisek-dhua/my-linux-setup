@@ -95,6 +95,22 @@ SCRIPT
 chmod +x "$HOME/.local/bin/touchpad-reload"
 echo -e "${GREEN}✅ 'touchpad-reload' command created for quick fix${NC}"
 
+# systemd service to keep touchpad powered on
+cat << 'EOF' | sudo tee /etc/systemd/system/touchpad-persist.service > /dev/null
+[Unit]
+Description=Keep touchpad powered on
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo on > /sys/devices/platform/AMDI0010:03/i2c-0/i2c-ELAN1300:00/power/control'
+ExecStart=/bin/sh -c 'echo on > /sys/devices/platform/AMDI0010:03/i2c-0/i2c-ELAN1300:00/0018:04F3:3104.0001/power/control'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl enable touchpad-persist.service 2>/dev/null || true
+echo -e "${GREEN}✅ Touchpad power persistence enabled${NC}"
+
 # ═══════════════════════════════════════════════════
 # 🐳 SECTION 6: Docker
 # ═══════════════════════════════════════════════════
@@ -310,6 +326,10 @@ fi
 # 🌐 SECTION 12: Google Chrome
 # ═══════════════════════════════════════════════════
 section "🌐 Installing Google Chrome"
+
+# Fix i386 architecture warning
+sudo dpkg --remove-architecture i386 2>/dev/null || true
+sudo rm -f /etc/apt/sources.list.d/google-chrome.list 2>/dev/null || true
 
 wget -qO- https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
 
