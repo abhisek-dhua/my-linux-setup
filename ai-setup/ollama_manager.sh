@@ -265,6 +265,44 @@ manage_service() {
     esac
 }
 
+# Fix common Ollama issues (Permissions & Service)
+fix_issues() {
+    print_warning "This will attempt to fix common permission and service issues based on the fix guide."
+    read -p "Proceed? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        return
+    fi
+    
+    print_status "Step 1: Check issues in journalctl (last 10 lines)..."
+    sudo journalctl -u ollama -n 10 --no-pager 2>/dev/null || true
+    echo
+    
+    print_status "Step 2: Fixing /usr/share/ollama directory permissions..."
+    sudo pkexec mkdir -p /usr/share/ollama
+    # Only try to chown to ollama if the user actually exists
+    if id "ollama" &>/dev/null; then
+        sudo pkexec chown ollama:ollama /usr/share/ollama
+        print_status "  -> Fixed /usr/share/ollama"
+    else
+        print_warning "  -> User 'ollama' does not exist, skipped chown for /usr/share/ollama"
+    fi
+    
+    local current_user=$(whoami)
+    print_status "Step 3: Fixing /home/$current_user/.ollama home directory ownership..."
+    sudo pkexec chown -R $current_user:$current_user /home/$current_user/.ollama 2>/dev/null || true
+    print_status "  -> Fixed ~/.ollama"
+    
+    print_status "Step 4: Restarting systemd service..."
+    sudo pkexec systemctl daemon-reload 2>/dev/null || true
+    sudo pkexec systemctl restart ollama 2>/dev/null || systemctl --user restart ollama 2>/dev/null || true
+    
+    print_status "Step 5: Verifying service status..."
+    sudo systemctl status ollama --no-pager 2>/dev/null || systemctl --user status ollama --no-pager 2>/dev/null || true
+    
+    print_status "Fix attempt completed successfully!"
+}
+
 # Show main menu
 show_menu() {
     clear
@@ -282,7 +320,8 @@ show_menu() {
     echo "4. List Installed Models"
     echo "5. Pull/Download Model"
     echo "6. Service Management"
-    echo "7. Exit"
+    echo "7. Fix Permissions/Service"
+    echo "8. Exit"
     echo
 }
 
@@ -290,7 +329,7 @@ show_menu() {
 main() {
     while true; do
         show_menu
-        read -p "Enter your choice (1-7): " choice
+        read -p "Enter your choice (1-8): " choice
         
         case $choice in
             1)
@@ -312,11 +351,14 @@ main() {
                 manage_service
                 ;;
             7)
+                fix_issues
+                ;;
+            8)
                 print_status "Goodbye!"
                 exit 0
                 ;;
             *)
-                print_error "Invalid choice. Please enter 1-7."
+                print_error "Invalid choice. Please enter 1-8."
                 ;;
         esac
         
