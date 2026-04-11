@@ -3,58 +3,58 @@
 echo "=== Multi-Account Git Setup Script ==="
 echo ""
 
-WORK_NAME=""
-WORK_EMAIL=""
-WORK_GITHUB_USER=""
-WORK_TOKEN=""
-
 PERSONAL_NAME=""
 PERSONAL_EMAIL=""
 PERSONAL_GITHUB_USER=""
 PERSONAL_TOKEN=""
 
+WORK_NAME=""
+WORK_EMAIL=""
+WORK_GITHUB_USER=""
+WORK_TOKEN=""
+
 TOPNOTCH_NAME=""
 TOPNOTCH_EMAIL=""
 TOPNOTCH_KEY=""
 TOPNOTCH_TOKEN=""
-TOPNOTCH_SETUP=""
-
-echo "=== Work Account ==="
-echo "Enter Work Git Name: "
-read -s WORK_NAME
-echo "Enter Work Git Email: "
-read -s WORK_EMAIL
-echo "Enter Work GitHub Username: "
-read -s WORK_GITHUB_USER
-echo "Enter Work GitHub Token: "
-read -s WORK_TOKEN
-echo ""
+TOPNOTCH_SETUP="n" # defaults "n"
 
 echo "=== Personal Account ==="
 echo "Enter Personal Git Name: "
-read -s PERSONAL_NAME
+read PERSONAL_NAME
 echo "Enter Personal Git Email: "
-read -s PERSONAL_EMAIL
+read PERSONAL_EMAIL
 echo "Enter Personal GitHub Username: "
-read -s PERSONAL_GITHUB_USER
+read PERSONAL_GITHUB_USER
 echo "Enter Personal GitHub Token: "
-read -s PERSONAL_TOKEN
+read PERSONAL_TOKEN
 echo ""
 
-echo "=== Topnotch Account ==="
-echo "Configure Topnotch? (y/n): "
-read -s TOPNOTCH_SETUP
-if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
-  echo "Enter Topnotch Git Name: "
-  read -s TOPNOTCH_NAME
-  echo "Enter Topnotch Git Email: "
-  read -s TOPNOTCH_EMAIL
-  echo "Enter Topnotch BitBucket Key: "
-  read -s TOPNOTCH_KEY
-  echo "Enter Topnotch BitBucket Token: "
-  read -s TOPNOTCH_TOKEN
-fi
+echo "=== Work Account ==="
+echo "Enter Work Git Name: "
+read WORK_NAME
+echo "Enter Work Git Email: "
+read WORK_EMAIL
+echo "Enter Work GitHub Username: "
+read WORK_GITHUB_USER
+echo "Enter Work GitHub Token: "
+read WORK_TOKEN
 echo ""
+
+# echo "=== Topnotch Account ==="
+# echo "Configure Topnotch? (y/n): "
+# read TOPNOTCH_SETUP
+# if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
+#   echo "Enter Topnotch Git Name: "
+#   read TOPNOTCH_NAME
+#   echo "Enter Topnotch Git Email: "
+#   read TOPNOTCH_EMAIL
+#   echo "Enter Topnotch BitBucket Key: "
+#   read TOPNOTCH_KEY
+#   echo "Enter Topnotch BitBucket Token: "
+#   read TOPNOTCH_TOKEN
+# fi
+# echo ""
 
 echo "Setting up..."
 
@@ -65,15 +65,15 @@ cat > ~/.gitconfig << EOF
 	name = WORK_NAME
 	email = WORK_EMAIL
 
+[pager]
+	branch = false
+
 [credential]
 	helper = /home/$USER/.git-cred-helper
 	useHttpPath = true
 
-[pager]
-	branch = false
-
-[includeIf "gitdir:~/Documents/AI/"]
-	path = ~/Documents/AI/.gitconfig
+[includeIf "gitdir:~/Documents/Projects/Personal/"]
+	path = ~/Documents/Projects/Personal/.gitconfig
 EOF
 
 if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
@@ -84,8 +84,9 @@ if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
 EOF
 fi
 
-mkdir -p ~/Documents/AI
-cat > ~/Documents/AI/.gitconfig << EOF
+mkdir -p ~/Documents/Projects/Work
+mkdir -p ~/Documents/Projects/Personal
+cat > ~/Documents/Projects/Personal/.gitconfig << EOF
 [user]
 	name = PERSONAL_NAME
 	email = PERSONAL_EMAIL
@@ -127,7 +128,7 @@ if [[ "\$ACTION" == "get" ]]; then
       echo "password=TOKEN_WORK"
     fi
   elif [[ "\$protocol" == "https" && "\$host" == "bitbucket.org" ]]; then
-TOPNOTCH_BLOCK="    echo \"username=TOPNOTCH_KEY\"
+  TOPNOTCH_BLOCK="echo \"username=TOPNOTCH_KEY\"
     echo \"password=TOKEN_TOPNOTCH\""
     if [[ -z "$TOPNOTCH_KEY" ]]; then
       echo "# Topnotch not configured"
@@ -145,8 +146,8 @@ sed -i "s/WORK_EMAIL/$WORK_EMAIL/" ~/.gitconfig
 sed -i "s/WORK_GITHUB_USER/$WORK_GITHUB_USER/" ~/.git-cred-helper
 sed -i "s/TOKEN_WORK/$WORK_TOKEN/" ~/.git-cred-helper
 
-sed -i "s/PERSONAL_NAME/$PERSONAL_NAME/" ~/Documents/AI/.gitconfig
-sed -i "s/PERSONAL_EMAIL/$PERSONAL_EMAIL/" ~/Documents/AI/.gitconfig
+sed -i "s/PERSONAL_NAME/$PERSONAL_NAME/" ~/Documents/Projects/Personal/.gitconfig
+sed -i "s/PERSONAL_EMAIL/$PERSONAL_EMAIL/" ~/Documents/Projects/Personal/.gitconfig
 sed -i "s/PERSONAL_GITHUB_USER/$PERSONAL_GITHUB_USER/" ~/.git-cred-helper
 sed -i "s/TOKEN_PERSONAL/$PERSONAL_TOKEN/" ~/.git-cred-helper
 
@@ -166,7 +167,7 @@ chmod +x ~/.git-cred-helper
 echo "✓ Setup complete!"
 echo ""
 echo "Folder mapping:"
-echo "  ~/Documents/AI/*      → $PERSONAL_GITHUB_USER"
+echo "  ~/Documents/Projects/Personal/*      → $PERSONAL_GITHUB_USER"
 if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
   echo "  /var/www/html/Topnotch → Topnotch"
 fi
