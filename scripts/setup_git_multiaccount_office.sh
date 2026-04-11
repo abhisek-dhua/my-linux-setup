@@ -41,20 +41,20 @@ echo "Enter Work GitHub Token: "
 read WORK_TOKEN
 echo ""
 
-# echo "=== Topnotch Account ==="
-# echo "Configure Topnotch? (y/n): "
-# read TOPNOTCH_SETUP
-# if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
-#   echo "Enter Topnotch Git Name: "
-#   read TOPNOTCH_NAME
-#   echo "Enter Topnotch Git Email: "
-#   read TOPNOTCH_EMAIL
-#   echo "Enter Topnotch BitBucket Key: "
-#   read TOPNOTCH_KEY
-#   echo "Enter Topnotch BitBucket Token: "
-#   read TOPNOTCH_TOKEN
-# fi
-# echo ""
+echo "=== Topnotch Account ==="
+echo "Configure Topnotch? (y/n): "
+read TOPNOTCH_SETUP
+if [[ "$TOPNOTCH_SETUP" == "y" || "$TOPNOTCH_SETUP" == "Y" ]]; then
+  echo "Enter Topnotch Git Name: "
+  read TOPNOTCH_NAME
+  echo "Enter Topnotch Git Email: "
+  read TOPNOTCH_EMAIL
+  echo "Enter Topnotch BitBucket Key: "
+  read TOPNOTCH_KEY
+  echo "Enter Topnotch BitBucket Token: "
+  read TOPNOTCH_TOKEN
+fi
+echo ""
 
 echo "Setting up..."
 
