@@ -65,51 +65,77 @@ section "💻 Installing drivers"
 sudo ubuntu-drivers autoinstall || true
 
 # ═══════════════════════════════════════════════════
-# 🖱️ SECTION 5: Touchpad Fix (ELAN I2C)
+# 🖱️ SECTION 5: Touchpad fix for ELAN1300 I2C HID
 # ═══════════════════════════════════════════════════
-section "🖱️ Touchpad I2C power management fix"
+section "🖱️ Touchpad fix for ELAN1300 I2C HID"
 
-sudo apt install -y libinput-tools || true
-
-GRUB_CMDLINE=$(grep '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub 2>/dev/null || echo '')
-if [[ -n "$GRUB_CMDLINE" ]]; then
-  if ! echo "$GRUB_CMDLINE" | grep -q 'i2c_hid.reset_descriptor=1'; then
-    sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 i2c_hid.reset_descriptor=1"/' /etc/default/grub
+# ───────────────────────────────────────────────────
+# 1. Kernel parameter fix (safe + robust)
+# ───────────────────────────────────────────────────
+if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=" /etc/default/grub; then
+  if ! grep -q "i2c_hid.reset_descriptor=1" /etc/default/grub; then
+    sudo sed -i 's/\(GRUB_CMDLINE_LINUX_DEFAULT=".*\)"/\1 i2c_hid.reset_descriptor=1"/' /etc/default/grub
     sudo update-grub || true
-    echo -e "${GREEN}✅ I2C HID kernel parameter added (reboot to apply)${NC}"
+    echo -e "${GREEN}✅ I2C HID kernel parameter added (reboot required)${NC}"
   else
     echo -e "${GREEN}✅ I2C HID kernel parameter already set${NC}"
   fi
 fi
 
-mkdir -p "$HOME/.local/bin"
+# ───────────────────────────────────────────────────
+# 2. Targeted udev rule (ONLY ELAN1300)
+# ───────────────────────────────────────────────────
+sudo tee /etc/udev/rules.d/99-touchpad-fix.rules > /dev/null << "EOF"
+# ────────────────────────────────────────────────────────────────────────────
+# 🎯 PICK ONE RULE BELOW (uncomment only one):
+# ────────────────────────────────────────────────────────────────────────────
 
-cat > "$HOME/.local/bin/touchpad-reload" << 'SCRIPT'
-#!/bin/bash
-echo "🔄 Reloading touchpad drivers..."
-sudo modprobe -r i2c_hid_acpi i2c_hid hid_multitouch
-sudo modprobe i2c_hid
-echo "✅ Touchpad reloaded"
-SCRIPT
+# ✅ RECOMMENDED: Target ELAN1300 touchpad ONLY (no side effects)
+ACTION=="add", SUBSYSTEM=="i2c", ATTR{name}=="ELAN1300*", ATTR{power/control}="on"
 
-chmod +x "$HOME/.local/bin/touchpad-reload"
-echo -e "${GREEN}✅ 'touchpad-reload' command created for quick fix${NC}"
+# 🟡 ALTERNATIVE: All I2C HID devices (for other touchpad models)
+# ACTION=="add", SUBSYSTEM=="i2c", DRIVER=="i2c_hid", ATTR{power/control}="on"
+# ACTION=="add", SUBSYSTEM=="i2c", DRIVER=="i2c_hid_acpi", ATTR{power/control}="on"
 
-# systemd service to keep touchpad powered on
-cat << 'EOF' | sudo tee /etc/systemd/system/touchpad-persist.service > /dev/null
-[Unit]
-Description=Keep touchpad powered on
-
-[Service]
-Type=oneshot
-ExecStart=/bin/sh -c 'echo on > /sys/devices/platform/AMDI0010:03/i2c-0/i2c-ELAN1300:00/power/control'
-ExecStart=/bin/sh -c 'echo on > /sys/devices/platform/AMDI0010:03/i2c-0/i2c-ELAN1300:00/0018:04F3:3104.0001/power/control'
-
-[Install]
-WantedBy=multi-user.target
+# 🔴 BROAD: All I2C bus devices (last resort if nothing else works)
+# ACTION=="add", SUBSYSTEM=="hid", KERNELS=="i2c-*", ATTR{power/control}="on"
 EOF
-sudo systemctl enable touchpad-persist.service 2>/dev/null || true
-echo -e "${GREEN}✅ Touchpad power persistence enabled${NC}"
+
+sudo udevadm control --reload-rules 2>/dev/null || true
+sudo udevadm trigger 2>/dev/null || true
+echo -e "${GREEN}✅ Targeted udev rule created for ELAN1300${NC}"
+
+# ───────────────────────────────────────────────────
+# 3. Suspend/resume fix (only if not exists)
+# ───────────────────────────────────────────────────
+if [ ! -f /lib/systemd/system-sleep/touchpad-fix.sh ]; then
+  sudo tee /lib/systemd/system-sleep/touchpad-fix.sh > /dev/null << "EOF"
+#!/bin/bash
+# Reload touchpad driver after waking from suspend
+[ "$1" = "post" ] && {
+  modprobe -r i2c_hid_acpi 2>/dev/null || true
+  modprobe -r i2c_hid      2>/dev/null || true
+  modprobe    i2c_hid      2>/dev/null || true
+  modprobe    i2c_hid_acpi 2>/dev/null || true
+}
+EOF
+  sudo chmod +x /lib/systemd/system-sleep/touchpad-fix.sh
+  echo -e "${GREEN}✅ Suspend/resume hook installed${NC}"
+else
+  echo -e "${GREEN}✅ Suspend/resume hook already exists${NC}"
+fi
+
+# ───────────────────────────────────────────────────
+# 4. Cleanup old conflicting configs
+# ───────────────────────────────────────────────────
+sudo rm -f /etc/udev/rules.d/99-touchpad-no-autosuspend.rules 2>/dev/null || true
+sudo rm -f /lib/systemd/system-sleep/touchpad-resume.sh 2>/dev/null || true
+sudo rm -f /etc/systemd/system/touchpad-persist.service 2>/dev/null || true
+
+sudo systemctl daemon-reload 2>/dev/null || true
+
+echo -e "${GREEN}✅ Old touchpad configuration cleaned up${NC}"
+echo -e "${YELLOW}⚠️  Reboot your system for all changes to take effect${NC}"
 
 # ═══════════════════════════════════════════════════
 # 🐳 SECTION 6: Docker
@@ -361,18 +387,21 @@ sudo apt update
 sudo apt install -y code || true
 
 # ═══════════════════════════════════════════════════
-# 🔐 SECTION 14: Git Config (Skip with 's')
+# 🔐 SECTION 14: Git Config
 # ═══════════════════════════════════════════════════
 section "🔐 Git Config"
-if [[ -z "${GIT_NAME:-}" ]]; then
-  read -p "Git username (or 's' to skip): " GIT_NAME
-fi
+echo -e "${BOLD}Configure git? (y/n)${NC}"
+read -r GIT_CONFIRM
 
-if [[ -z "${GIT_EMAIL:-}" ]]; then
-  read -p "Git email (or 's' to skip): " GIT_EMAIL
-fi
+if [[ "$GIT_CONFIRM" =~ ^[Yy]$ ]]; then
+  if [[ -z "${GIT_NAME:-}" ]]; then
+    read -p "Git username: " GIT_NAME
+  fi
 
-if [[ "${GIT_NAME:-}" != "s" && "${GIT_EMAIL:-}" != "s" && -n "${GIT_NAME:-}" && -n "${GIT_EMAIL:-}" ]]; then
+  if [[ -z "${GIT_EMAIL:-}" ]]; then
+    read -p "Git email: " GIT_EMAIL
+  fi
+
   git config --global user.name "$GIT_NAME"
   git config --global user.email "$GIT_EMAIL"
   git config --global core.pager ""
