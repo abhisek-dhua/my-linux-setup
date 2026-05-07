@@ -128,11 +128,7 @@ clear_all_data() {
     echo "  - All sessions, history, cache, memories, projects"
     echo ""
 
-    read -p "Are you absolutely sure? Type 'DELETE' to confirm: " confirm
-    if [[ "$confirm" != "DELETE" ]]; then
-        print_info "Operation cancelled."
-        return
-    fi
+    confirm "Are you absolutely sure? (y/N): " || { print_info "Operation cancelled."; return; }
 
     print_info "Clearing all OpenClaude data..."
 
@@ -258,6 +254,58 @@ show_status() {
     pause
 }
 
+remove_all_openclaude_folders() {
+    section "Remove All .openclaude Folders"
+
+    print_warning "This will search for and remove ALL .openclaude directories system-wide."
+    print_warning "This requires sudo privileges for directories outside your home."
+    echo ""
+
+    read -p "Request sudo privileges now? (y/N): " sudo_confirm
+    if [[ "$sudo_confirm" =~ ^[Yy]$ ]]; then
+        print_info "Requesting sudo privileges..."
+        if sudo -v; then
+            print_success "Sudo privileges granted."
+        else
+            print_error "Failed to obtain sudo privileges. Some directories may not be removable."
+            confirm "Continue anyway? (y/N): " || { print_info "Operation cancelled."; pause; return; }
+        fi
+    fi
+
+    print_info "Searching for .openclaude directories..."
+    local found_dirs=$(find / -type d -name ".openclaude" 2>/dev/null)
+
+    if [[ -z "$found_dirs" ]]; then
+        print_info "No .openclaude directories found on the system."
+        pause
+        return
+    fi
+
+    echo ""
+    print_info "Found the following .openclaude directories:"
+    echo "$found_dirs" | nl
+    echo ""
+
+    confirm "Remove ALL these directories? (y/N): " || { print_info "Operation cancelled."; pause; return; }
+
+    print_info "Removing all .openclaude directories..."
+    local count=0
+    while IFS= read -r dir; do
+        if [[ -n "$dir" ]]; then
+            if sudo rm -rf "$dir" 2>/dev/null; then
+                print_success "Removed: $dir"
+                ((count++))
+            else
+                print_error "Failed to remove: $dir"
+            fi
+        fi
+    done <<< "$found_dirs"
+
+    echo ""
+    print_success "Removed $count .openclaude director$([[ $count -eq 1 ]] && echo 'y' || echo 'ies')!"
+    pause
+}
+
 main_menu() {
     while true; do
         print_header
@@ -271,10 +319,11 @@ Please select an option:
   5) Clear Project Data Only
   6) Update OpenClaude
   7) Show Status
-  8) Exit
+  8) Remove All .openclaude Folders System-Wide
+  9) Exit
 
 EOF
-        read -p "Enter your choice [1-8]: " choice
+        read -p "Enter your choice [1-9]: " choice
 
         case $choice in
             1) install_openclaude ;;
@@ -284,7 +333,8 @@ EOF
             5) clear_projects ;;
             6) update_openclaude ;;
             7) show_status ;;
-            8) print_header; print_success "Goodbye!"; exit 0 ;;
+            8) remove_all_openclaude_folders ;;
+            9) print_header; print_success "Goodbye!"; exit 0 ;;
             *) print_error "Invalid option. Please try again."; sleep 1 ;;
         esac
     done

@@ -127,11 +127,7 @@ clear_all_data() {
     echo "  - All sessions, history, cache, memories, settings"
     echo ""
 
-    read -p "Are you absolutely sure? Type 'DELETE' to confirm: " confirm
-    if [[ "$confirm" != "DELETE" ]]; then
-        print_info "Operation cancelled."
-        return
-    fi
+    confirm "Are you absolutely sure? (y/N): " || { print_info "Operation cancelled."; return; }
 
     print_info "Clearing all KiloCode data..."
 

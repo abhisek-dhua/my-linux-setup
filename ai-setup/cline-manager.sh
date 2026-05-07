@@ -119,11 +119,7 @@ clear_all_data() {
     echo "  - All config, cache, tasks, logs, secrets"
     echo ""
 
-    read -p "Are you absolutely sure? Type 'DELETE' to confirm: " confirm
-    if [[ "$confirm" != "DELETE" ]]; then
-        print_info "Operation cancelled."
-        return
-    fi
+    confirm "Are you absolutely sure? (y/N): " || { print_info "Operation cancelled."; return; }
 
     print_info "Clearing all Cline data..."
 
