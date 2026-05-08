@@ -16,7 +16,7 @@ section() {
 }
 
 echo -e "${BOLD}${GREEN}🚀 Starting Ultimate Ubuntu Dev Setup${NC}"
-echo -e "${YELLOW}Sections: System → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → VS Code → Git → Antigravity → FDM → Optional Utilities${NC}"
+echo -e "${YELLOW}Sections: System → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → VS Code → Git → Antigravity → FDM → Teams (optional) → Optional Utilities${NC}"
 
 # ═══════════════════════════════════════════════════
 # 👤 SECTION 1: User Configuration
@@ -443,9 +443,38 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🛠️ SECTION 17: Optional System Utilities
+# 💬 SECTION 17: Microsoft Teams for Linux
+# ═══════════════════════════════════════════════════
+section "💬 Installing Microsoft Teams for Linux"
+
+echo -e "${BOLD}Install Microsoft Teams for Linux? (y/n)${NC}"
+read -r INSTALL_TEAMS
+
+if [[ "$INSTALL_TEAMS" =~ ^[Yy]$ ]]; then
+  sudo mkdir -p /etc/apt/keyrings
+  sudo wget -qO /etc/apt/keyrings/teams-for-linux.asc https://repo.teamsforlinux.de/teams-for-linux.asc
+
+  sudo tee /etc/apt/sources.list.d/teams-for-linux-packages.sources > /dev/null << 'EOF'
+Types: deb
+URIs: https://repo.teamsforlinux.de/debian/
+Suites: stable
+Components: main
+Signed-By: /etc/apt/keyrings/teams-for-linux.asc
+Architectures: amd64
+EOF
+
+  sudo apt update
+  sudo apt install -y teams-for-linux || true
+  echo -e "${GREEN}✅ Microsoft Teams installed${NC}"
+else
+  echo -e "${YELLOW}⏭️ Skipping Microsoft Teams${NC}"
+fi
+
+# ═══════════════════════════════════════════════════
+# 🛠️ SECTION 18: Optional System Utilities
 # ═══════════════════════════════════════════════════
 section "🛠️ Optional System Utilities"
+
 echo -e "${BOLD}Install optional system utilities? (y/n)${NC}"
 read -r INSTALL_UTILS
 

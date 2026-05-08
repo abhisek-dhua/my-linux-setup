@@ -10,25 +10,26 @@ A comprehensive one-time setup script that installs and configures your entire d
 
 **Features (runs in order):**
 
-| #   | Section                  | Description                                                                                           |
-| --- | ------------------------ | ----------------------------------------------------------------------------------------------------- |
-| 1   | 👤 User Configuration    | Username detection + zsh shell prompt                                                                 |
-| 2   | 🔄 System Update         | Full `apt update && apt upgrade`                                                                      |
+| #   | Section                  | Description                                                                                                                                                                                               |
+| --- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 👤 User Configuration    | Username detection + zsh shell prompt                                                                                                                                                                     |
+| 2   | 🔄 System Update         | Full `apt update && apt upgrade`                                                                                                                                                                          |
 | 3   | 🧩 Essentials            | build-essential, curl, wget, git, unzip, tmux, software-properties-common, apt-transport-https, ca-certificates, gnupg, lsb-release, net-tools, dconf-cli, fonts-powerline, xclip, xsel, vim, neovim, vlc |
-| 4   | 💻 Drivers               | `ubuntu-drivers autoinstall`                                                                          |
-| 5   | 🖱️ Touchpad Fix          | ELAN1300 targeted idle/sleep fix, udev rule + lightweight systemd-sleep hook, auto cleanup old config |
-| 6   | 🐳 Docker                | docker.io + docker-compose + user permissions                                                        |
-| 7   | 🔤 Fonts                 | FiraCode Nerd Font (auto-download with fallback)                                                      |
-| 8   | 💻 Zsh + Oh My Zsh       | Agnoster theme, zsh-autosuggestions, zsh-syntax-highlighting, fast-syntax-highlighting              |
-| 9   | ⚡ NVM + Node            | Latest LTS Node + Cline, OpenCode, Angular CLI                                                        |
-| 10  | 🐍 Python + Pyenv        | python3 + pyenv with dev dependencies                                                                 |
-| 11  | 🖥 GNOME Terminal        | FiraCode font, dark theme, transparency                                                               |
-| 12  | 🌐 Google Chrome         | Official repo (auto-updates via apt)                                                                  |
-| 13  | 🧠 VS Code               | Official repo (auto-updates via apt)                                                                  |
-| 14  | 🔐 Git Config            | Username/email setup + credential helper (y/n prompted)                                            |
-| 15  | 🚗 Antigravity           | Google Antigravity app with apt repo                                                                  |
-| 16  | 📥 Free Download Manager | FDM (.deb from SourceForge)                                                                          |
-| 17  | 🛠️ Optional Utilities    | _(prompted)_ htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip, gnome-tweaks, flatpak   |
+| 4   | 💻 Drivers               | `ubuntu-drivers autoinstall`                                                                                                                                                                              |
+| 5   | 🖱️ Touchpad Fix          | ELAN1300 targeted idle/sleep fix, udev rule + lightweight systemd-sleep hook, auto cleanup old config                                                                                                     |
+| 6   | 🐳 Docker                | docker.io + docker-compose + user permissions                                                                                                                                                             |
+| 7   | 🔤 Fonts                 | FiraCode Nerd Font (auto-download with fallback)                                                                                                                                                          |
+| 8   | 💻 Zsh + Oh My Zsh       | Agnoster theme, zsh-autosuggestions, zsh-syntax-highlighting, fast-syntax-highlighting                                                                                                                    |
+| 9   | ⚡ NVM + Node            | Latest LTS Node + Cline, OpenCode, Angular CLI                                                                                                                                                            |
+| 10  | 🐍 Python + Pyenv        | python3 + pyenv with dev dependencies                                                                                                                                                                     |
+| 11  | 🖥 GNOME Terminal        | FiraCode font, dark theme, transparency                                                                                                                                                                   |
+| 12  | 🌐 Google Chrome         | Official repo (auto-updates via apt)                                                                                                                                                                      |
+| 13  | 🧠 VS Code               | Official repo (auto-updates via apt)                                                                                                                                                                      |
+| 14  | 🔐 Git Config            | Username/email setup + credential helper (y/n prompted)                                                                                                                                                   |
+| 15  | 🚗 Antigravity           | Google Antigravity app with apt repo                                                                                                                                                                      |
+| 16  | 📥 Free Download Manager | FDM (.deb from SourceForge)                                                                                                                                                                               |
+| 17  | 💬 Microsoft Teams       | _(prompted)_ Community-maintained Teams client with apt repo (auto-updates via apt)                                                                                                                       |
+| 18  | 🛠️ Optional Utilities    | _(prompted)_ htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip, gnome-tweaks, flatpak                                                                                                       |
 
 **Usage:**
 
