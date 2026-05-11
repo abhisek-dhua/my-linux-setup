@@ -5,13 +5,13 @@ Tests all available NVIDIA models and generates a benchmark report
 Supports filtering for large models (>100B parameters)
 """
 
-import requests
-import time
-import json
 import os
+import time
+import requests
+import statistics
+from typing import Optional
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import statistics
 
 # NVIDIA API Configuration
 NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
@@ -146,7 +146,7 @@ def test_model(model_id: str) -> dict:
     return results
 
 
-def run_benchmark(models: list, max_models: int = None) -> list:
+def run_benchmark(models: list, max_models: Optional[int] = None) -> list:
     """Run benchmarks on multiple models concurrently"""
     import sys
 
@@ -273,7 +273,7 @@ def generate_report(results: list) -> str:
     return "\n".join(report)
 
 
-def save_results(results: list, filename: str = None):
+def save_results(results: list, filename: Optional[str] = None):
     """Save detailed results to JSON file"""
     # This function is now a no-op since we don't want JSON output
     pass

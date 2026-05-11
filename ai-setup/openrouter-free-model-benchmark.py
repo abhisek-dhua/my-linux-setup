@@ -4,14 +4,14 @@ OpenRouter Free Model Benchmark Script
 Tests all available free models on OpenRouter and generates a benchmark report
 """
 
-import requests
-import time
-import json
 import os
+import sys
+import time
+import requests
+import statistics
+from typing import Optional
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import statistics
-import sys
 
 # OpenRouter API Configuration
 BASE_URL = "https://openrouter.ai/api/v1"
@@ -154,7 +154,7 @@ def test_model(model_id: str) -> dict:
     return results
 
 
-def run_benchmark(models: list, max_models: int = None) -> list:
+def run_benchmark(models: list, max_models: Optional[int] = None) -> list:
     """Run benchmarks on multiple models concurrently"""
     if max_models:
         models = models[:max_models]
@@ -279,7 +279,7 @@ def generate_report(results: list) -> str:
     return "\n".join(report)
 
 
-def save_results(results: list, filename: str = None):
+def save_results(results: list, filename: Optional[str] = None):
     """Save detailed results to JSON file (no-op for now)"""
     pass
 
