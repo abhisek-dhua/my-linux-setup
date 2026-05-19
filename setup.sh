@@ -287,8 +287,10 @@ if command -v nvm >/dev/null 2>&1; then
 
   if command -v npm >/dev/null 2>&1; then
     echo "🤖 Installing AI CLI tools..."
-    npm install -g cline || npm install -g https://github.com/cline/cline || true
+    npm install -g cline || true
     npm install -g opencode-ai || true
+    npm install -g @kilocode/cli || true
+    npm install -g @gitlawb/openclaude || true
 
     echo "🅰️ Installing Angular CLI..."
     npm install -g @angular/cli || true
