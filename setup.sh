@@ -16,7 +16,7 @@ section() {
 }
 
 echo -e "${BOLD}${GREEN}🚀 Starting Ultimate Ubuntu Dev Setup${NC}"
-echo -e "${YELLOW}Sections: System → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → VS Code → Git → Antigravity → FDM → Teams (optional) → Optional Utilities${NC}"
+echo -e "${YELLOW}Sections: System → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → VS Code → Git → FDM → Teams (optional) → Optional Utilities${NC}"
 
 # ═══════════════════════════════════════════════════
 # 👤 SECTION 1: User Configuration
@@ -290,7 +290,6 @@ if command -v nvm >/dev/null 2>&1; then
     npm install -g cline || true
     npm install -g opencode-ai || true
     npm install -g @kilocode/cli || true
-    npm install -g @gitlawb/openclaude || true
 
     echo "🅰️ Installing Angular CLI..."
     npm install -g @angular/cli || true
@@ -414,25 +413,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🚗 SECTION 15: Antigravity
-# ═══════════════════════════════════════════════════
-section "🚗 Installing Antigravity"
-
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg -o /tmp/antigravity-key-ascii.gpg
-gpg --dearmor --yes -o /tmp/antigravity-repo-key.gpg /tmp/antigravity-key-ascii.gpg
-sudo cp /tmp/antigravity-repo-key.gpg /etc/apt/keyrings/antigravity-repo-key.gpg
-sudo chmod a+r /etc/apt/keyrings/antigravity-repo-key.gpg
-rm -f /tmp/antigravity-key-ascii.gpg /tmp/antigravity-repo-key.gpg
-
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-  sudo tee /etc/apt/sources.list.d/antigravity.list >/dev/null
-
-sudo apt update
-sudo apt install -y antigravity || true
-
-# ═══════════════════════════════════════════════════
-# 📥 SECTION 16: Free Download Manager (FDM)
+# 📥 SECTION 15: Free Download Manager (FDM)
 # ═══════════════════════════════════════════════════
 section "📥 Installing Free Download Manager"
 
@@ -445,7 +426,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 💬 SECTION 17: Microsoft Teams for Linux
+# 💬 SECTION 16: Microsoft Teams for Linux
 # ═══════════════════════════════════════════════════
 section "💬 Installing Microsoft Teams for Linux"
 
@@ -473,7 +454,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🛠️ SECTION 18: Optional System Utilities
+# 🛠️ SECTION 17: Optional System Utilities
 # ═══════════════════════════════════════════════════
 section "🛠️ Optional System Utilities"
 
