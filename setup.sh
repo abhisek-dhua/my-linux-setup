@@ -1,11 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
+NC='\033[0m'
 BOLD='\033[1m'
+RED='\033[0;31m'
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m'
+
+LOG_FILE="/tmp/ubuntu-setup-$(date +%Y%m%d-%H%M%S).log"
+log_ok()   { echo -e "${GREEN}✅ $1${NC}"; echo "[OK] $1" >> "$LOG_FILE"; }
+log_warn() { echo -e "${YELLOW}⚠️  $1${NC}"; echo "[WARN] $1" >> "$LOG_FILE"; }
+log_err()  { echo -e "${RED}❌ $1${NC}"; echo "[ERROR] $1" >> "$LOG_FILE"; }
 
 section() {
   echo ""
@@ -35,6 +41,9 @@ if [[ -z "${SUDO_USER:-}" ]]; then
 else
     SETUP_USER="$SUDO_USER"
 fi
+
+USER_HOME="/home/$SETUP_USER"
+ZSHRC="$USER_HOME/.zshrc"
 
 echo -e "${BOLD}Switch to zsh as default shell? (y/n)${NC}"
 read -r SWITCH_TO_ZSH
@@ -148,13 +157,14 @@ fi
 # ───────────────────────────────────────────────────
 # 4. Cleanup old conflicting configs
 # ───────────────────────────────────────────────────
+# Remove conflicting files from old touchpad setups
 sudo rm -f /etc/udev/rules.d/99-touchpad-no-autosuspend.rules 2>/dev/null || true
 sudo rm -f /lib/systemd/system-sleep/touchpad-resume.sh 2>/dev/null || true
 sudo rm -f /etc/systemd/system/touchpad-persist.service 2>/dev/null || true
 
 sudo systemctl daemon-reload 2>/dev/null || true
 
-echo -e "${GREEN}✅ Old touchpad configuration cleaned up${NC}"
+echo -e "${GREEN}✅ Touchpad fix applied (ELAN1300 targeted)${NC}"
 echo -e "${YELLOW}⚠️  Reboot your system for all changes to take effect${NC}"
 else
   echo -e "${YELLOW}⏭️ Skipping touchpad fix${NC}"
@@ -186,7 +196,7 @@ echo -e "${BOLD}Install FiraCode Nerd Font? (y/n)${NC}"
 read -r INSTALL_FONTS
 
 if [[ "$INSTALL_FONTS" =~ ^[Yy]$ ]]; then
-FONT_DIR="$HOME/.local/share/fonts"
+FONT_DIR="$USER_HOME/.local/share/fonts"
 mkdir -p "$FONT_DIR"
 
 (
@@ -247,13 +257,14 @@ if [[ "$SWITCH_TO_ZSH" =~ ^[Yy]$ ]]; then
     sudo usermod -s "$(which zsh)" "$SETUP_USER" || chsh -s "$(which zsh)" || true
 fi
 
-if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+if [[ ! -d "$USER_HOME/.oh-my-zsh" ]]; then
   echo "⬇️ Installing Oh My Zsh..."
   RUNZSH=no CHSH=no sh -c \
     "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+  sudo chown -R "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.oh-my-zsh" 2>/dev/null || true
 fi
 
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+ZSH_CUSTOM="${ZSH_CUSTOM:-$USER_HOME/.oh-my-zsh/custom}"
 mkdir -p "$ZSH_CUSTOM/plugins"
 
 install_plugin() {
@@ -272,32 +283,32 @@ install_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosugge
 install_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
 install_plugin "fast-syntax-highlighting" "https://github.com/zdharma-continuum/fast-syntax-highlighting.git"
 
-grep -q "^ZSH_THEME=" ~/.zshrc \
-  && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="agnoster"/' ~/.zshrc \
-  || echo 'ZSH_THEME="agnoster"' >> ~/.zshrc
+grep -q "^ZSH_THEME=" "$ZSHRC" \
+  && sed -i 's/^ZSH_THEME=.*/ZSH_THEME="agnoster"/' "$ZSHRC" \
+  || echo 'ZSH_THEME="agnoster"' >> "$ZSHRC"
 
-grep -q "FiraCode" ~/.zshrc || echo 'export FIRA_CODE="FiraCode Nerd Font"' >> ~/.zshrc
+grep -q "FiraCode" "$ZSHRC" || echo 'export FIRA_CODE="FiraCode Nerd Font"' >> "$ZSHRC"
 
-grep -q "PROMPT_SEGMENT_USER_BG" ~/.zshrc || cat >> ~/.zshrc << 'EOF'
+grep -q "PROMPT_SEGMENT_USER_BG" "$ZSHRC" || cat >> "$ZSHRC" << 'EOF'
 
 # Agnoster Theme Colors
 PROMPT_SEGMENT_USER_BG="blue"
 PROMPT_SEGMENT_USER_FG="white"
 PROMPT_SEGMENT_DIR_BG="cyan"
 PROMPT_SEGMENT_DIR_FG="white"
+PROMPT_SEGMENT_GIT_FG="black"
 PROMPT_SEGMENT_GIT_CLEAN_BG="green"
 PROMPT_SEGMENT_GIT_DIRTY_BG="yellow"
-PROMPT_SEGMENT_GIT_FG="black"
-PROMPT_SEGMENT_VENV_BG="magenta"
 PROMPT_SEGMENT_VENV_FG="white"
+PROMPT_SEGMENT_VENV_BG="magenta"
 PROMPT_SEGMENT_TIME_BG="default"
 EOF
 
-grep -q "^plugins=" ~/.zshrc \
-  && sed -i 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting)/' ~/.zshrc \
-  || echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting)' >> ~/.zshrc
+grep -q "^plugins=" "$ZSHRC" \
+  && sed -i 's/^plugins=.*/plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting)/' "$ZSHRC" \
+  || echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting)' >> "$ZSHRC"
 
-grep -q HIST_STAMPS ~/.zshrc || echo 'HIST_STAMPS="yyyy-mm-dd"' >> ~/.zshrc
+grep -q HIST_STAMPS "$ZSHRC" || echo 'HIST_STAMPS="yyyy-mm-dd"' >> "$ZSHRC"
 else
   echo -e "${YELLOW}⏭️ Skipping Zsh setup${NC}"
 fi
@@ -312,7 +323,7 @@ read -r INSTALL_NODE
 
 if [[ "$INSTALL_NODE" =~ ^[Yy]$ ]]; then
 
-export NVM_DIR="$HOME/.nvm"
+export NVM_DIR="$USER_HOME/.nvm"
 
 if [[ ! -d "$NVM_DIR" ]]; then
   echo "⬇️ Installing NVM..."
@@ -324,7 +335,7 @@ if [[ ! -d "$NVM_DIR" ]]; then
   curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash || true
 fi
 
-grep -q "NVM_DIR" ~/.zshrc || cat >> ~/.zshrc << 'EOF'
+grep -q "NVM_DIR" "$ZSHRC" || cat >> "$ZSHRC" << 'EOF'
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
@@ -333,10 +344,11 @@ EOF
 set +u
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
-if command -v nvm >/dev/null 2>&1; then
-  echo "✅ NVM loaded"
+if command -v nvm >/dev/null 2>&1; then    echo "✅ NVM loaded"
   nvm install --lts || true
   nvm use --lts || true
+  # Fix ownership since we installed as root
+  sudo chown -R "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.nvm" 2>/dev/null || true
 
   if command -v npm >/dev/null 2>&1; then
     # Allow postinstall scripts for packages we install
@@ -380,11 +392,12 @@ sudo apt install -y make libssl-dev zlib1g-dev \
   libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev \
   libffi-dev liblzma-dev || true
 
-if [[ ! -d "$HOME/.pyenv" ]]; then
+if [[ ! -d "$USER_HOME/.pyenv" ]]; then
   curl https://pyenv.run | bash || true
+  sudo chown -R "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.pyenv" 2>/dev/null || true
 fi
 
-grep -q PYENV_ROOT ~/.zshrc || cat >> ~/.zshrc << 'EOF'
+grep -q PYENV_ROOT "$ZSHRC" || cat >> "$ZSHRC" << 'EOF'
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
@@ -415,9 +428,9 @@ if command -v ptyxis-cli &>/dev/null || dpkg -l ptyxis 2>/dev/null | grep -q "^i
         if [[ -n "$PTYXIS_UUID" ]]; then
             PTYXIS_BASE="org.gnome.Ptyxis.Profile:/org/gnome/Ptyxis/Profiles/${PTYXIS_UUID}/"
 
-            gsettings set "$PTYXIS_BASE" font 'FiraCode Nerd Font 12' 2>/dev/null || true
-            gsettings set "$PTYXIS_BASE" use-system-font false 2>/dev/null || true
             gsettings set "$PTYXIS_BASE" opacity 0.84 2>/dev/null || true
+            gsettings set "$PTYXIS_BASE" use-system-font false 2>/dev/null || true
+            gsettings set "$PTYXIS_BASE" font 'FiraCode Nerd Font 12' 2>/dev/null || true
 
             echo "✅ Ptyxis terminal profile configured"
         else
@@ -437,14 +450,14 @@ elif command -v gnome-terminal &>/dev/null; then
         if [[ -n "$PROFILE_PATH" ]]; then
             BASE="org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:${PROFILE_PATH}/"
 
-            gsettings set "$BASE" font 'FiraCode Nerd Font 12' 2>/dev/null || true
             gsettings set "$BASE" use-system-font false 2>/dev/null || true
             gsettings set "$BASE" use-theme-colors false 2>/dev/null || true
-            gsettings set "$BASE" background-color 'rgb(0,0,0)' 2>/dev/null || true
-            gsettings set "$BASE" foreground-color 'rgb(255,255,255)' 2>/dev/null || true
+            gsettings set "$BASE" font 'FiraCode Nerd Font 12' 2>/dev/null || true
             gsettings set "$BASE" use-theme-transparency false 2>/dev/null || true
+            gsettings set "$BASE" background-color 'rgb(0,0,0)' 2>/dev/null || true
             gsettings set "$BASE" use-transparent-background true 2>/dev/null || true
             gsettings set "$BASE" background-transparency-percent 16 2>/dev/null || true
+            gsettings set "$BASE" foreground-color 'rgb(255,255,255)' 2>/dev/null || true
 
             echo "✅ GNOME Terminal profile configured"
         else
@@ -501,22 +514,24 @@ if [[ "$INSTALL_VSCODE" =~ ^[Yy]$ ]]; then
 sudo snap remove code || true
 
 # Remove any existing VSCode sources to prevent duplicates
+sudo rm -f /usr/share/keyrings/microsoft.gpg 2>/dev/null || true
 sudo rm -f /etc/apt/sources.list.d/vscode.list 2>/dev/null || true
 sudo rm -f /etc/apt/sources.list.d/vscode.sources 2>/dev/null || true
-sudo rm -f /etc/apt/trusted.gpg.d/packages.microsoft.gpg 2>/dev/null || true
 sudo rm -f /etc/apt/keyrings/packages.microsoft.gpg 2>/dev/null || true
+sudo rm -f /etc/apt/trusted.gpg.d/packages.microsoft.gpg 2>/dev/null || true
 
-# Add repo cleanly using DEB822 format (works on Ubuntu 22.04+)
-sudo mkdir -p /etc/apt/keyrings
-wget -qO- https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/packages.microsoft.gpg || true
+# Import Microsoft GPG key (official path per Microsoft docs)
+sudo apt install -y wget gpg 2>/dev/null || true
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft.gpg || true
 
+# Add repo using DEB822 format (works on Ubuntu 22.04+)
 sudo tee /etc/apt/sources.list.d/vscode.sources > /dev/null << 'EOF'
 Types: deb
 URIs: https://packages.microsoft.com/repos/code
 Suites: stable
 Components: main
-Architectures: amd64
-Signed-By: /etc/apt/keyrings/packages.microsoft.gpg
+Architectures: amd64,arm64,armhf
+Signed-By: /usr/share/keyrings/microsoft.gpg
 EOF
 
 sudo apt update || true
@@ -595,7 +610,30 @@ EOF
 
   sudo apt update || true
   sudo apt install -y teams-for-linux || true
-  echo -e "${GREEN}✅ Microsoft Teams installed${NC}"
+
+  # Create autostart entry so Teams launches on boot
+  mkdir -p "$USER_HOME/.config/autostart"
+  if [[ -f /usr/share/applications/teams-for-linux.desktop ]]; then
+    cp /usr/share/applications/teams-for-linux.desktop "$USER_HOME/.config/autostart/"
+    chown "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.config/autostart/teams-for-linux.desktop"
+    log_ok "Teams autostart entry created"
+  else
+    log_warn "teams-for-linux.desktop not found, creating manually"
+    cat > "$USER_HOME/.config/autostart/teams-for-linux.desktop" << 'DESKTOP'
+[Desktop Entry]
+Name=Teams for Linux
+Exec=/opt/teams-for-linux/teams-for-linux --ozone-platform=x11 %U
+Terminal=false
+Type=Application
+Icon=teams-for-linux
+StartupWMClass=teams-for-linux
+Comment=Unofficial Microsoft Teams client for Linux using Electron.
+MimeType=x-scheme-handler/msteams;
+Categories=Chat;Network;Office;
+DESKTOP
+    chown "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.config/autostart/teams-for-linux.desktop"
+  fi
+  log_ok "Microsoft Teams installed"
 else
   echo -e "${YELLOW}⏭️ Skipping Microsoft Teams${NC}"
 fi
