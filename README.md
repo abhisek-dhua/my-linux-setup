@@ -24,13 +24,14 @@ A comprehensive one-time setup script that installs and configures your entire d
 | 10  | 🐍 Python + Pyenv        | ❌ No     | python3 + pyenv with dev dependencies                                                                                                                                                                     |
 | 11  | 🖥 Terminal Config       | ❌ No     | Auto-detects Ptyxis (Ubuntu 26+) or GNOME Terminal (Ubuntu 24), configures font, theme, transparency                                                                                                      |
 | 12  | 🌐 Google Chrome         | ❌ No     | Official repo (auto-updates via apt, safe multiarch handling)                                                                                                                                             |
-| 13  | 🧠 VS Code               | ❌ No     | Official repo (DEB822 format, keys in `/etc/apt/keyrings/` for APT 3.1)                                                                                                                                   |
-| 14  | 🔐 Git Config            | ❌ No     | Username/email setup + credential helper                                                                                                                                                                  |
-| 15  | 📥 Free Download Manager | ❌ No     | FDM (.deb from SourceForge)                                                                                                                                                                               |
-| 16  | 💬 Microsoft Teams       | ❌ No     | Community-maintained Teams client with apt repo (auto-updates via apt)                                                                                                                                    |
-| 17  | 🛠️ Optional Utilities    | ❌ No     | htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip, gnome-tweaks, flatpak, exfatprogs (Ubuntu 26 compatible)                                                                                 |
+| 13  | 🦊 Mozilla Firefox       | ❌ No     | Mozilla PPA (removes Snap, auto-updates via apt)                                                                                                                                                          |
+| 14  | 🧠 VS Code               | ❌ No     | Official repo (DEB822 format, keys in `/etc/apt/keyrings/` for APT 3.1)                                                                                                                                   |
+| 15  | 🔐 Git Config            | ❌ No     | Username/email setup + credential helper                                                                                                                                                                  |
+| 16  | 📥 Free Download Manager | ❌ No     | FDM (.deb from SourceForge)                                                                                                                                                                               |
+| 17  | 💬 Microsoft Teams       | ❌ No     | Community-maintained Teams client with apt repo (auto-updates via apt)                                                                                                                                    |
+| 18  | 🛠️ Optional Utilities    | ❌ No     | htop, btop, jq, tree, fzf, ripgrep, fd-find, bat, ffmpeg, p7zip, gnome-tweaks, flatpak, exfatprogs (Ubuntu 26 compatible)                                                                                 |
 
-> **Note:** Sections 1 and 2 are mandatory and run automatically. All other sections (3–16) prompt for confirmation before executing.
+> **Note:** Sections 1 and 2 are mandatory and run automatically. All other sections (3–18) prompt for confirmation before executing.
 
 **Usage:**
 
