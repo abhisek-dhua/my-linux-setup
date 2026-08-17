@@ -22,7 +22,7 @@ section() {
 }
 
 echo -e "${BOLD}${GREEN}🚀 Starting Ultimate Ubuntu Dev Setup${NC}"
-echo -e "${YELLOW}Sections: User Config → System Update (mandatory) → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → VS Code → Git → FDM → Teams → Optional Utilities${NC}"
+echo -e "${YELLOW}Sections: User Config → System Update (mandatory) → Essentials → Drivers → Touchpad → Docker → Fonts → Zsh → Node → Python → Terminal → Chrome → Firefox → VS Code → Git → FDM → Teams → Optional Utilities${NC}"
 
 # ═══════════════════════════════════════════════════
 # 👤 SECTION 1: User Configuration
@@ -314,7 +314,7 @@ if command -v nvm >/dev/null 2>&1; then    echo "✅ NVM loaded"
   if command -v npm >/dev/null 2>&1; then
     # Allow postinstall scripts for packages we install
     CURRENT_ALLOW=$(npm config get allow-scripts --location=user 2>/dev/null || echo "")
-    PACKAGES="cline,protobufjs,opencode-ai,@kilocode/cli,@angular/cli"
+    PACKAGES="cline,opencode-ai,@kilocode/cli"
     if [[ -n "$CURRENT_ALLOW" && "$CURRENT_ALLOW" != "null" ]]; then
       # Merge with existing allow-scripts, deduplicate
       MERGED=$(echo "$CURRENT_ALLOW,$PACKAGES" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
@@ -463,7 +463,36 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🧠 SECTION 13: VS Code
+# 🦊 SECTION 13: Mozilla Firefox (APT)
+# ═══════════════════════════════════════════════════
+section "🦊 Installing Mozilla Firefox (APT)"
+
+echo -e "${BOLD}Install Mozilla Firefox from APT (Mozilla PPA)? (y/n)${NC}"
+read -r INSTALL_FIREFOX
+
+if [[ "$INSTALL_FIREFOX" =~ ^[Yy]$ ]]; then
+
+# Remove Snap Firefox if present
+if command -v snap &>/dev/null && snap list firefox &>/dev/null 2>&1; then
+  echo -e "${CYAN}Removing Snap Firefox...${NC}"
+  sudo snap remove firefox --purge || true
+  rm -rf "$USER_HOME/snap/firefox" 2>/dev/null || true
+fi
+
+# Add Mozilla PPA
+sudo add-apt-repository ppa:mozillateam/ppa -y || true
+
+# Install Firefox from Mozilla PPA with higher priority
+sudo apt update || true
+sudo apt install -t 'o=LP-PPA-mozillateam' firefox -y || true
+
+log_ok "Mozilla Firefox (APT) installed"
+else
+  echo -e "${YELLOW}⏭️ Skipping Mozilla Firefox${NC}"
+fi
+
+# ═══════════════════════════════════════════════════
+# 🧠 SECTION 14: VS Code
 # ═══════════════════════════════════════════════════
 section "🧠 Installing VS Code"
 
@@ -502,7 +531,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🔐 SECTION 14: Git Config
+# 🔐 SECTION 15: Git Config
 # ═══════════════════════════════════════════════════
 section "🔐 Git Config"
 
@@ -528,7 +557,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 📥 SECTION 15: Free Download Manager (FDM)
+# 📥 SECTION 16: Free Download Manager (FDM)
 # ═══════════════════════════════════════════════════
 section "📥 Installing Free Download Manager"
 
@@ -549,7 +578,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 💬 SECTION 16: Microsoft Teams for Linux
+# 💬 SECTION 17: Microsoft Teams for Linux
 # ═══════════════════════════════════════════════════
 section "💬 Installing Microsoft Teams for Linux"
 
@@ -600,7 +629,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🛠️ SECTION 17: Optional System Utilities
+# 🛠️ SECTION 18: Optional System Utilities
 # ═══════════════════════════════════════════════════
 section "🛠️ Optional System Utilities"
 
