@@ -89,83 +89,44 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🖱️ SECTION 5: Touchpad fix for ELAN1300 I2C HID
+# 🖱️ SECTION 5: Touchpad fix (I2C-HID generic, layered)
 # ═══════════════════════════════════════════════════
-section "🖱️ Touchpad fix for ELAN1300 I2C HID"
+section "🖱️ Touchpad fix (I2C-HID generic)"
 
-echo -e "${BOLD}Apply touchpad fix for ELAN1300 I2C HID? (y/n)${NC}"
+echo -e "${BOLD}Apply touchpad fix? (y/n)${NC}"
 read -r INSTALL_TOUCHPAD
 
 if [[ "$INSTALL_TOUCHPAD" =~ ^[Yy]$ ]]; then
 
-# ───────────────────────────────────────────────────
-# 1. Kernel parameter fix (safe + robust)
-# ───────────────────────────────────────────────────
-if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT=" /etc/default/grub; then
-  if ! grep -q "i2c_hid.reset_descriptor=1" /etc/default/grub; then
-    sudo sed -i 's/\(GRUB_CMDLINE_LINUX_DEFAULT=".*\)"/\1 i2c_hid.reset_descriptor=1"/' /etc/default/grub
-    sudo update-grub || true
-    echo -e "${GREEN}✅ I2C HID kernel parameter added (reboot required)${NC}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FIX_TOUCHPAD="$SCRIPT_DIR/scripts/fix-touchpad.sh"
+FIX_TOUCHPAD_URL="https://github.com/abhisek-dhua/my-linux-setup/raw/refs/heads/main/scripts/fix-touchpad.sh"
+DOWNLOADED_FIX=""
+
+# Prefer the local copy (cloned repo / offline); if only setup.sh was
+# downloaded, fetch the latest manager from GitHub.
+if [[ ! -f "$FIX_TOUCHPAD" ]]; then
+  echo -e "${CYAN}⬇️ scripts/fix-touchpad.sh not found locally — downloading latest from GitHub...${NC}"
+  DOWNLOADED_FIX="$(mktemp /tmp/fix-touchpad.XXXXXX.sh)"
+  if curl -fsSL --max-time 30 "$FIX_TOUCHPAD_URL" -o "$DOWNLOADED_FIX"; then
+    FIX_TOUCHPAD="$DOWNLOADED_FIX"
   else
-    echo -e "${GREEN}✅ I2C HID kernel parameter already set${NC}"
+    rm -f "$DOWNLOADED_FIX"
+    FIX_TOUCHPAD=""
   fi
 fi
 
-# ───────────────────────────────────────────────────
-# 2. Targeted udev rule (ONLY ELAN1300)
-# ───────────────────────────────────────────────────
-sudo tee /etc/udev/rules.d/99-touchpad-fix.rules > /dev/null << "EOF"
-# ────────────────────────────────────────────────────────────────────────────
-# 🎯 PICK ONE RULE BELOW (uncomment only one):
-# ────────────────────────────────────────────────────────────────────────────
-
-# ✅ RECOMMENDED: Target ELAN1300 touchpad ONLY (no side effects)
-ACTION=="add", SUBSYSTEM=="i2c", ATTR{name}=="ELAN1300*", ATTR{power/control}="on"
-
-# 🟡 ALTERNATIVE: All I2C HID devices (for other touchpad models)
-# ACTION=="add", SUBSYSTEM=="i2c", DRIVER=="i2c_hid", ATTR{power/control}="on"
-# ACTION=="add", SUBSYSTEM=="i2c", DRIVER=="i2c_hid_acpi", ATTR{power/control}="on"
-
-# 🔴 BROAD: All I2C bus devices (last resort if nothing else works)
-# ACTION=="add", SUBSYSTEM=="hid", KERNELS=="i2c-*", ATTR{power/control}="on"
-EOF
-
-sudo udevadm control --reload-rules 2>/dev/null || true
-sudo udevadm trigger 2>/dev/null || true
-echo -e "${GREEN}✅ Targeted udev rule created for ELAN1300${NC}"
-
-# ───────────────────────────────────────────────────
-# 3. Suspend/resume fix (only if not exists)
-# ───────────────────────────────────────────────────
-if [ ! -f /lib/systemd/system-sleep/touchpad-fix.sh ]; then
-  sudo tee /lib/systemd/system-sleep/touchpad-fix.sh > /dev/null << "EOF"
-#!/bin/bash
-# Reload touchpad driver after waking from suspend
-[ "$1" = "post" ] && {
-  modprobe -r i2c_hid_acpi 2>/dev/null || true
-  modprobe -r i2c_hid      2>/dev/null || true
-  modprobe    i2c_hid      2>/dev/null || true
-  modprobe    i2c_hid_acpi 2>/dev/null || true
-}
-EOF
-  sudo chmod +x /lib/systemd/system-sleep/touchpad-fix.sh
-  echo -e "${GREEN}✅ Suspend/resume hook installed${NC}"
+if [[ -n "$FIX_TOUCHPAD" && -f "$FIX_TOUCHPAD" ]]; then
+  # Single source of truth: the manager script installs everything
+  # (runtime-PM prevention + resume reset + smart watchdog).
+  sudo bash "$FIX_TOUCHPAD" --apply || log_warn "Touchpad fix reported an error"
+  log_ok "Touchpad fix applied (prevention + resume reset + smart watchdog)"
 else
-  echo -e "${GREEN}✅ Suspend/resume hook already exists${NC}"
+  log_warn "Could not find scripts/fix-touchpad.sh locally or download it — skipping touchpad fix"
 fi
 
-# ───────────────────────────────────────────────────
-# 4. Cleanup old conflicting configs
-# ───────────────────────────────────────────────────
-# Remove conflicting files from old touchpad setups
-sudo rm -f /etc/udev/rules.d/99-touchpad-no-autosuspend.rules 2>/dev/null || true
-sudo rm -f /lib/systemd/system-sleep/touchpad-resume.sh 2>/dev/null || true
-sudo rm -f /etc/systemd/system/touchpad-persist.service 2>/dev/null || true
+if [[ -n "$DOWNLOADED_FIX" ]]; then rm -f "$DOWNLOADED_FIX"; fi
 
-sudo systemctl daemon-reload 2>/dev/null || true
-
-echo -e "${GREEN}✅ Touchpad fix applied (ELAN1300 targeted)${NC}"
-echo -e "${YELLOW}⚠️  Reboot your system for all changes to take effect${NC}"
 else
   echo -e "${YELLOW}⏭️ Skipping touchpad fix${NC}"
 fi
