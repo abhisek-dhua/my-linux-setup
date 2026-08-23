@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Automatically update opencode.jsonc with latest free models from OpenRouter and all NVIDIA models.
 
+Interactive menu asks whether to update NVIDIA, OpenRouter, both, or exit.
+
 Keys are read from:
   1. Environment variables: OPENROUTER_API_KEY, NVIDIA_API_KEY
   2. Existing opencode.jsonc config
   3. Interactive prompt (hidden input)
+
+If no API key can be found for a chosen provider (not in env, not in config,
+and user enters nothing), that provider is NOT added to the config; if it is
+already present there, its entry is REMOVED so opencode never lists it.
 
 Keys are NEVER logged or printed.
 """
@@ -157,24 +163,79 @@ def get_api_key(provider, env_var, existing_key=None):
     if existing_key:
         return existing_key
     print(f"\n  API key not found for {provider}.")
-    print(f"  Set env var {env_var} or enter below.")
+    print(f"  Set env var {env_var}, or enter it below (press Enter to skip).")
     key = getpass.getpass(f"  Enter {provider} API key: ").strip()
     if not key:
-        print(f"  No key provided. Skipping {provider} update.")
+        print(f"  No key provided.")
         return None
     return key
 
 
-def update_openrouter(config, free_models):
+def remove_provider(config, provider_name, label):
+    """Drop a provider entry so its models never appear in opencode."""
+    providers = config.get("provider", {})
+    if provider_name in providers:
+        del providers[provider_name]
+        if not providers:
+            config.pop("provider", None)
+        print(f"  {label} has no API key. Removed existing '{provider_name}' entry from config.")
+        return True
+    print(f"  {label} has no API key. Nothing added to config.")
+    return False
+
+
+def handle_openrouter(config):
+    """Update OpenRouter models, or remove the provider if no key is available."""
+    options = config.get("provider", {}).get("openrouter", {}).get("options", {})
+    api_key = get_api_key("OpenRouter", "OPENROUTER_API_KEY", options.get("apiKey"))
+    if not api_key:
+        return remove_provider(config, "openrouter", "OpenRouter")
+    try:
+        free_models = fetch_openrouter_free_models()
+    except requests.HTTPError as e:
+        status = getattr(e.response, "status_code", None)
+        if status in (401, 403):
+            print("  API key rejected by OpenRouter.")
+            return remove_provider(config, "openrouter", "OpenRouter")
+        print(f"  Error fetching OpenRouter models: {e}")
+        print("  Keeping existing OpenRouter configuration unchanged.")
+        return False
+    except Exception as e:
+        print(f"  Error fetching OpenRouter models: {e}")
+        print("  Keeping existing OpenRouter configuration unchanged.")
+        return False
+    return update_openrouter(config, free_models, api_key)
+
+
+def handle_nvidia(config):
+    """Update NVIDIA models, or remove the provider if no key is available."""
+    options = config.get("provider", {}).get("nvidia", {}).get("options", {})
+    api_key = get_api_key("NVIDIA", "NVIDIA_API_KEY", options.get("apiKey"))
+    if not api_key:
+        return remove_provider(config, "nvidia", "NVIDIA")
+    try:
+        nvidia_models = fetch_nvidia_models(api_key)
+    except requests.HTTPError as e:
+        status = getattr(e.response, "status_code", None)
+        if status in (401, 403):
+            print("  API key rejected by NVIDIA.")
+            return remove_provider(config, "nvidia", "NVIDIA")
+        print(f"  Error fetching NVIDIA models: {e}")
+        print("  Keeping existing NVIDIA configuration unchanged.")
+        return False
+    except Exception as e:
+        print(f"  Error fetching NVIDIA models: {e}")
+        print("  Keeping existing NVIDIA configuration unchanged.")
+        return False
+    return update_nvidia(config, nvidia_models, api_key)
+
+
+def update_openrouter(config, free_models, api_key):
     """Update OpenRouter whitelist and models with free models."""
     provider = config.setdefault("provider", {})
     or_config = provider.setdefault("openrouter", {})
     or_config.setdefault("api", "https://openrouter.ai/api/v1")
     options = or_config.setdefault("options", {})
-
-    api_key = get_api_key("OpenRouter", "OPENROUTER_API_KEY", options.get("apiKey"))
-    if not api_key:
-        return False
     if STORE_KEYS:
         options["apiKey"] = api_key
     else:
@@ -190,17 +251,12 @@ def update_openrouter(config, free_models):
     return True
 
 
-def update_nvidia(config, nvidia_models, api_key=None):
+def update_nvidia(config, nvidia_models, api_key):
     """Update NVIDIA whitelist and models."""
     provider = config.setdefault("provider", {})
     nv_config = provider.setdefault("nvidia", {})
     nv_config.setdefault("api", "https://integrate.api.nvidia.com/v1")
     options = nv_config.setdefault("options", {})
-
-    if api_key is None:
-        api_key = get_api_key("NVIDIA", "NVIDIA_API_KEY", options.get("apiKey"))
-    if not api_key:
-        return False
     if STORE_KEYS:
         options["apiKey"] = api_key
     else:
@@ -244,38 +300,46 @@ def find_config():
     return target
 
 
+def ask_scope():
+    """Ask which provider(s) the user wants to update."""
+    print("What do you want to update?")
+    print("  1) NVIDIA")
+    print("  2) OpenRouter")
+    print("  3) Both")
+    print("  4) Exit")
+    while True:
+        choice = input("Enter choice [1-4]: ").strip().lower()
+        if choice == "1":
+            return "nvidia"
+        if choice == "2":
+            return "openrouter"
+        if choice == "3":
+            return "both"
+        if choice == "4":
+            print("\nExiting without changes.")
+            sys.exit(0)
+        print("Invalid choice. Please enter 1, 2, 3 or 4.")
+
+
 def main():
     print("=== OpenCODE Model Updater ===\n")
 
     config_path = find_config()
     print(f"Config: {config_path}\n")
 
+    scope = ask_scope()
+    print()
+
     config, _ = read_config(config_path)
     config.setdefault("$schema", "https://opencode.ai/config.json")
-    config.setdefault("provider", {})
 
-    or_models = []
-    nv_models = []
-    nv_key = None
+    changed = False
+    if scope in ("nvidia", "both"):
+        changed |= handle_nvidia(config)
+    if scope in ("openrouter", "both"):
+        changed |= handle_openrouter(config)
 
-    try:
-        or_models = fetch_openrouter_free_models()
-    except Exception as e:
-        print(f"  Error fetching OpenRouter models: {e}")
-
-    try:
-        existing_nv_key = config.get("provider", {}).get("nvidia", {}).get("options", {}).get("apiKey")
-        nv_key = get_api_key("NVIDIA", "NVIDIA_API_KEY", existing_nv_key)
-        if nv_key:
-            nv_models = fetch_nvidia_models(nv_key)
-    except Exception as e:
-        print(f"  Error fetching NVIDIA models: {e}")
-
-    print()
-    or_ok = update_openrouter(config, or_models) if or_models else False
-    nv_ok = update_nvidia(config, nv_models, nv_key) if nv_models else False
-
-    if or_ok or nv_ok:
+    if changed:
         write_config(config_path, config)
         print(f"\nConfig saved: {config_path}")
     else:
