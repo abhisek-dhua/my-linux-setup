@@ -34,13 +34,16 @@ if [[ "$ACTION" == "get" ]]; then
     while IFS='|' read -r c_host c_user c_token c_path; do
       [[ "$c_host" != "$HOST" ]] && continue
       if [[ -n "$c_path" ]]; then
-        if [[ "$PATH_VAL" == $c_path ]]; then
-          score=${#c_path}
-          if (( score > best_score )); then
-            best_score=$score
-            best_match="$c_user|$c_token"
+        IFS=',' read -ra paths <<< "$c_path"
+        for p in "${paths[@]}"; do
+          if [[ "$PATH_VAL" == $p ]]; then
+            score=${#p}
+            if (( score > best_score )); then
+              best_score=$score
+              best_match="$c_user|$c_token"
+            fi
           fi
-        fi
+        done
       else
         if [[ -z "$best_match" ]]; then
           best_match="$c_user|$c_token"
