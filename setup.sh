@@ -463,33 +463,90 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# 🦊 SECTION 13: Mozilla Firefox (APT)
+# 🦊 SECTION 13: Mozilla Firefox
 # ═══════════════════════════════════════════════════
-section "🦊 Installing Mozilla Firefox (APT)"
+section "🦊 Installing Mozilla Firefox"
 
-echo -e "${BOLD}Install Mozilla Firefox from APT (Mozilla PPA)? (y/n)${NC}"
-read -r INSTALL_FIREFOX
+echo -e "${BOLD}Choose Firefox installation method:${NC}"
+echo
+echo -e "  ${CYAN}1)${NC} Ubuntu Snap ${GREEN}(default)${NC}"
+echo -e "  ${CYAN}2)${NC} Mozilla APT PPA"
+echo -e "  ${CYAN}3)${NC} Skip Firefox"
+echo
+read -r -p "Enter choice [1]: " FIREFOX_CHOICE
 
-if [[ "$INSTALL_FIREFOX" =~ ^[Yy]$ ]]; then
+# Default to Snap
+FIREFOX_CHOICE="${FIREFOX_CHOICE:-1}"
 
-# Remove Snap Firefox if present
-if command -v snap &>/dev/null && snap list firefox &>/dev/null 2>&1; then
-  echo -e "${CYAN}Removing Snap Firefox...${NC}"
-  sudo snap remove firefox --purge || true
-  rm -rf "$USER_HOME/snap/firefox" 2>/dev/null || true
-fi
+case "$FIREFOX_CHOICE" in
 
-# Add Mozilla PPA
-sudo add-apt-repository ppa:mozillateam/ppa -y || true
+    1)
+        echo -e "${CYAN}🦊 Installing Firefox via Ubuntu Snap...${NC}"
 
-# Install Firefox from Mozilla PPA with higher priority
-sudo apt update || true
-sudo apt install -t 'o=LP-PPA-mozillateam' firefox -y || true
+        # Remove APT Firefox if installed
+        if dpkg-query -W -f='${Status}' firefox 2>/dev/null \
+            | grep -q "install ok installed"; then
+            echo -e "${CYAN}Removing APT Firefox...${NC}"
+            sudo apt purge firefox -y || true
+        fi
 
-log_ok "Mozilla Firefox (APT) installed"
-else
-  echo -e "${YELLOW}⏭️ Skipping Mozilla Firefox${NC}"
-fi
+        # Install Snap Firefox
+        if command -v snap &>/dev/null; then
+            if snap list firefox &>/dev/null 2>&1; then
+                echo -e "${GREEN}Firefox Snap is already installed.${NC}"
+            else
+                sudo snap install firefox || true
+            fi
+        else
+            echo -e "${RED}Snap is not installed on this system.${NC}"
+            echo -e "${YELLOW}Install snapd first or choose the Mozilla APT option.${NC}"
+        fi
+
+        log_ok "Mozilla Firefox (Snap) installed"
+        ;;
+
+    2)
+        echo -e "${CYAN}🦊 Installing Firefox via Mozilla APT PPA...${NC}"
+
+        # Remove Snap Firefox if present
+        if command -v snap &>/dev/null \
+            && snap list firefox &>/dev/null 2>&1; then
+
+            echo -e "${CYAN}Removing Snap Firefox...${NC}"
+            sudo snap remove firefox --purge || true
+        fi
+
+        # Add Mozilla PPA
+        sudo add-apt-repository ppa:mozillateam/ppa -y || true
+
+        # Update package lists
+        sudo apt update || true
+
+        # Install Firefox from Mozilla PPA
+        sudo apt install -t 'o=LP-PPA-mozillateam' firefox -y || true
+
+        log_ok "Mozilla Firefox (APT / Mozilla PPA) installed"
+        ;;
+
+    3)
+        echo -e "${YELLOW}⏭️ Skipping Mozilla Firefox${NC}"
+        ;;
+
+    *)
+        echo -e "${YELLOW}Invalid choice. Using default: Ubuntu Snap${NC}"
+
+        if command -v snap &>/dev/null; then
+            if ! snap list firefox &>/dev/null 2>&1; then
+                sudo snap install firefox || true
+            fi
+        else
+            echo -e "${RED}Snap is not installed.${NC}"
+        fi
+
+        log_ok "Mozilla Firefox (Snap) selected by default"
+        ;;
+
+esac
 
 # ═══════════════════════════════════════════════════
 # 🧠 SECTION 14: VS Code
