@@ -68,8 +68,8 @@ check_desktop_installed() {
     if [ -f "/opt/opencode-desktop.AppImage" ] || [ -f "/opt/opencode.appimage" ]; then
         return 0
     fi
-    # Check for .deb installation
-    if dpkg -l | grep -q "^ii.*opencode-desktop"; then
+    # Check for .deb installation (package name is "opencode")
+    if dpkg -l | grep -q "^ii.*opencode[[:space:]]"; then
         return 0
     fi
     return 1
@@ -111,6 +111,9 @@ get_desktop_version() {
         /opt/opencode-desktop.AppImage --version 2>/dev/null | head -1 || echo "?"
     elif [ -f "/opt/opencode.appimage" ]; then
         /opt/opencode.appimage --version 2>/dev/null | head -1 || echo "?"
+    elif dpkg -l | grep -q "^ii.*opencode[[:space:]]"; then
+        # Get version from dpkg
+        dpkg -l | grep "^ii.*opencode[[:space:]]" | awk '{print $3}' | head -1
     else
         echo "?"
     fi
@@ -269,9 +272,9 @@ uninstall_npm() {
 uninstall_desktop() {
     print_status "Uninstalling OpenCode Desktop..."
     
-    # Try apt remove first
-    if dpkg -l | grep -q "^ii.*opencode-desktop"; then
-        sudo apt remove -y opencode-desktop
+    # Try apt remove first (package name is "opencode")
+    if dpkg -l | grep -q "^ii.*opencode[[:space:]]"; then
+        sudo apt remove -y opencode
         print_status "Removed via apt"
     fi
     
