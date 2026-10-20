@@ -9,7 +9,9 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-DOWNLOAD_PAGE="https://antigravity.google/download"
+# API endpoints for version/release info
+HUB_API="https://antigravity-hub-auto-updater-974169037036.us-central1.run.app/releases"
+IDE_API="https://antigravity-ide-auto-updater-974169037036.us-central1.run.app/releases"
 AGY_INSTALLER_URL="https://antigravity.google/cli/install.sh"
 
 print_header() {
@@ -64,6 +66,42 @@ get_cli_version() {
     agy --version 2>/dev/null || echo "?"
 }
 
+# Get latest release info from API
+get_latest_hub_release() {
+    curl -fsSL --compressed --retry 3 "$HUB_API" 2>/dev/null | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data:
+    latest = data[0]
+    print(latest['version'], latest['execution_id'])
+"
+}
+
+get_latest_ide_release() {
+    curl -fsSL --compressed --retry 3 "$IDE_API" 2>/dev/null | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data:
+    latest = data[0]
+    print(latest['version'], latest['execution_id'])
+"
+}
+
+# Get download URL for a specific platform
+get_hub_download_url() {
+    local version="$1"
+    local execution_id="$2"
+    local platform="$3"  # linux-x64 or linux-arm
+    echo "https://storage.googleapis.com/antigravity-public/antigravity-hub/${version}-${execution_id}/${platform}/Antigravity.tar.gz"
+}
+
+get_ide_download_url() {
+    local version="$1"
+    local execution_id="$2"
+    local platform="$3"  # linux-x64 or linux-arm
+    echo "https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${version}-${execution_id}/${platform}/Antigravity%20IDE.tar.gz"
+}
+
 install_desktop() {
     print_status "Installing Antigravity 2.0 Desktop App..."
 
@@ -86,46 +124,75 @@ install_desktop() {
 #!/usr/bin/env bash
 set -euo pipefail
 if [ "$(id -u)" -ne 0 ]; then echo "Run with sudo" >&2; exit 1; fi
-download_page="${1:-https://antigravity.google/download}"
-install_root="/opt/antigravity"; command_link="/usr/local/bin/antigravity"
+
+HUB_API="https://antigravity-hub-auto-updater-974169037036.us-central1.run.app/releases"
+install_root="/opt/antigravity"
+command_link="/usr/local/bin/antigravity"
 desktop_file="/usr/share/applications/antigravity.desktop"
 icon_file="/usr/share/icons/hicolor/512x512/apps/antigravity.png"
-case "$(uname -m)" in x86_64|amd64) platform="linux-x64" ;; aarch64|arm64) platform="linux-arm" ;; *) echo "Unsupported" >&2; exit 1 ;; esac
+
+case "$(uname -m)" in
+    x86_64|amd64) platform="linux-x64"; top="Antigravity-x64" ;;
+    aarch64|arm64) platform="linux-arm"; top="Antigravity-arm64" ;;
+    *) echo "Unsupported architecture" >&2; exit 1 ;;
+esac
+
 for cmd in curl tar python3; do command -v "$cmd" >/dev/null 2>&1 || { echo "$cmd required" >&2; exit 1; }; done
-if [ -L "$command_link" ]; then t=$(readlink -f "$command_link" || true); case "$t" in "$install_root"/*) ;; *) echo "Bad link" >&2; exit 1 ;; esac; elif [ -e "$command_link" ]; then echo "Exists" >&2; exit 1; fi
-tmpdir=$(mktemp -d "${TMPDIR:-/var/tmp}/antigravity.XXXXXX"); trap 'rm -rf "$tmpdir"' EXIT
-curl -fsSL --compressed --retry 3 -o "$tmpdir/dl.html" "$download_page"
-main_js=$(python3 - "$tmpdir/dl.html" "$download_page" <<'PY'
-import re,sys;from urllib.parse import urljoin
-h=open(sys.argv[1]).read();m=re.findall(r'(?:src|href)="([^"]*main-[^"]+\.js)"',h)
-print(urljoin(sys.argv[2],m[-1]))
-PY
-)
-curl -fsSL --compressed --retry 3 -o "$tmpdir/dl.js" "$main_js"
-IFS=' ' read -r ver url <<<"$(python3 - "$tmpdir/dl.js" "$platform" <<'PY'
-import re,sys
-b=open(sys.argv[1],errors='replace').read();p=sys.argv[2];s=b.find('id:"antigravity-2"');e=b.find('},{name:"command",id:"antigravity-cli"',s)
-m=re.search(r'href:"([^"]+/'+re.escape(p)+r'/Antigravity\.tar\.gz)"',b[s:e])
-vm=re.search(r'/antigravity-hub/([^/]+)/',m.group(1))
-print(vm.group(1).split("-",1)[0],m.group(1))
-PY
-)"
-[ -n "$ver" ] && [ -n "$url" ] || { echo "Parse failed" >&2; exit 1; }
-case "$platform" in linux-x64) top="Antigravity-x64" ;; linux-arm) top="Antigravity-arm64" ;; esac
-[ -f "$icon_file" ] || icon_old=1
-if [ "$(cat "$install_root/.linuxcapable-version" 2>/dev/null)" = "$ver" ] && [ -x "$install_root/$top/antigravity" ] && [ -f "$desktop_file" ] && [ -f "$icon_file" ]; then printf 'Already installed: %s\n' "$ver"; exit 0; fi
-echo "Downloading $ver..."; curl -fsSL --retry 3 -o "$tmpdir/arc.tar.gz" "$url"
-tar -xzf "$tmpdir/arc.tar.gz" -C "$tmpdir"; [ -x "$tmpdir/$top/antigravity" ] || { echo "Binary not found" >&2; exit 1; }
+
+if [ -L "$command_link" ]; then
+    t=$(readlink -f "$command_link" || true)
+    case "$t" in "$install_root"/*) ;; *) echo "Bad link" >&2; exit 1 ;; esac
+elif [ -e "$command_link" ]; then
+    echo "Exists" >&2; exit 1
+fi
+
+tmpdir=$(mktemp -d "${TMPDIR:-/var/tmp}/antigravity.XXXXXX")
+trap 'rm -rf "$tmpdir"' EXIT
+
+# Get latest release info
+release_info=$(curl -fsSL --compressed --retry 3 "$HUB_API")
+version=$(echo "$release_info" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['version'])")
+execution_id=$(echo "$release_info" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['execution_id'])")
+
+[ -n "$version" ] && [ -n "$execution_id" ] || { echo "Failed to get release info" >&2; exit 1; }
+
+url="https://storage.googleapis.com/antigravity-public/antigravity-hub/${version}-${execution_id}/${platform}/Antigravity.tar.gz"
+
+# Check if already installed
+if [ "$(cat "$install_root/.linuxcapable-version" 2>/dev/null)" = "$version" ] && [ -x "$install_root/$top/antigravity" ] && [ -f "$desktop_file" ] && [ -f "$icon_file" ]; then
+    printf 'Already installed: %s\n' "$version"
+    exit 0
+fi
+
+echo "Downloading $version..."
+curl -fsSL --retry 3 -o "$tmpdir/arc.tar.gz" "$url"
+tar -xzf "$tmpdir/arc.tar.gz" -C "$tmpdir"
+[ -x "$tmpdir/$top/antigravity" ] || { echo "Binary not found" >&2; exit 1; }
+
+# Extract icon
 python3 - "$tmpdir/$top/resources/app.asar" "$tmpdir/icon.png" <<'PY2'
 import json,struct,sys
 a=open(sys.argv[1],"rb");o=open(sys.argv[2],"wb");a.read(4);hs=struct.unpack("<I",a.read(4))[0];a.read(4);js=struct.unpack("<I",a.read(4))[0]
 h=json.loads(a.read(js).decode());ic=h["files"]["icon.png"];a.seek(8+hs+int(ic["offset"]));o.write(a.read(int(ic["size"])))
 PY2
-rm -rf "${install_root}.new"; mkdir -p "${install_root}.new"; cp -a "$tmpdir/$top" "${install_root}.new/"; echo "$ver" >"${install_root}.new/.linuxcapable-version"
-if [ -f "${install_root}.new/$top/chrome-sandbox" ]; then chown root:root "${install_root}.new/$top/chrome-sandbox"; chmod 4755 "${install_root}.new/$top/chrome-sandbox"; fi
+
+rm -rf "${install_root}.new"
+mkdir -p "${install_root}.new"
+cp -a "$tmpdir/$top" "${install_root}.new/"
+echo "$version" >"${install_root}.new/.linuxcapable-version"
+
+if [ -f "${install_root}.new/$top/chrome-sandbox" ]; then
+    chown root:root "${install_root}.new/$top/chrome-sandbox"
+    chmod 4755 "${install_root}.new/$top/chrome-sandbox"
+fi
+
 [ -d "$install_root" ] && { rm -rf "${install_root}.previous"; mv "$install_root" "${install_root}.previous"; }
-mv "${install_root}.new" "$install_root"; ln -sfn "$install_root/$top/antigravity" "$command_link"
-mkdir -p "$(dirname "$icon_file")"; install -m 0644 "$tmpdir/icon.png" "$icon_file"
+mv "${install_root}.new" "$install_root"
+ln -sfn "$install_root/$top/antigravity" "$command_link"
+
+mkdir -p "$(dirname "$icon_file")"
+install -m 0644 "$tmpdir/icon.png" "$icon_file"
+
 tee "$desktop_file" >/dev/null <<DESKTOP
 [Desktop Entry]
 Name=Antigravity
@@ -138,9 +205,10 @@ Categories=Development;IDE;
 StartupNotify=true
 StartupWMClass=Antigravity
 DESKTOP
+
 update-desktop-database /usr/share/applications 2>/dev/null || true
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
-printf 'Installed Antigravity %s\n' "$ver"
+printf 'Installed Antigravity %s\n' "$version"
 HELPER
         sudo chmod +x /usr/local/bin/update-antigravity
     fi
@@ -170,41 +238,69 @@ install_ide() {
 #!/usr/bin/env bash
 set -euo pipefail
 if [ "$(id -u)" -ne 0 ]; then echo "Run with sudo" >&2; exit 1; fi
-download_page="${1:-https://antigravity.google/download}"
-install_root="/opt/antigravity-ide"; command_link="/usr/local/bin/antigravity-ide"
+
+IDE_API="https://antigravity-ide-auto-updater-974169037036.us-central1.run.app/releases"
+install_root="/opt/antigravity-ide"
+command_link="/usr/local/bin/antigravity-ide"
 desktop_file="/usr/share/applications/antigravity-ide.desktop"
 icon_file="/usr/share/icons/hicolor/512x512/apps/antigravity-ide.png"
-case "$(uname -m)" in x86_64|amd64) platform="linux-x64" ;; aarch64|arm64) platform="linux-arm" ;; *) echo "Unsupported" >&2; exit 1 ;; esac
+
+case "$(uname -m)" in
+    x86_64|amd64) platform="linux-x64" ;;
+    aarch64|arm64) platform="linux-arm" ;;
+    *) echo "Unsupported architecture" >&2; exit 1 ;;
+esac
+
 for cmd in curl tar python3; do command -v "$cmd" >/dev/null 2>&1 || { echo "$cmd required" >&2; exit 1; }; done
-if [ -L "$command_link" ]; then t=$(readlink -f "$command_link" || true); case "$t" in "$install_root"/*) ;; *) echo "Bad link" >&2; exit 1 ;; esac; elif [ -e "$command_link" ]; then echo "Exists" >&2; exit 1; fi
-tmpdir=$(mktemp -d "${TMPDIR:-/var/tmp}/antigravity-ide.XXXXXX"); trap 'rm -rf "$tmpdir"' EXIT
-curl -fsSL --compressed --retry 3 -o "$tmpdir/dl.html" "$download_page"
-main_js=$(python3 - "$tmpdir/dl.html" "$download_page" <<'PY'
-import re,sys;from urllib.parse import urljoin
-h=open(sys.argv[1]).read();m=re.findall(r'(?:src|href)="([^"]*main-[^"]+\.js)"',h)
-print(urljoin(sys.argv[2],m[-1]))
-PY
-)
-curl -fsSL --compressed --retry 3 -o "$tmpdir/dl.js" "$main_js"
-IFS=' ' read -r ver url <<<"$(python3 - "$tmpdir/dl.js" "$platform" <<'PY'
-import re,sys
-b=open(sys.argv[1],errors='replace').read();p=sys.argv[2];s=b.find('id:"antigravity-ide"');e=b.find('},{name:"download",id:"antigravity-sdk"',s)
-m=re.search(r'href:"([^"]+/'+re.escape(p)+r'/Antigravity%20IDE\.tar\.gz)"',b[s:e])
-vm=re.search(r'/stable/([^/]+)/',m.group(1))
-print(vm.group(1).split("-",1)[0],m.group(1))
-PY
-)"
-[ -n "$ver" ] && [ -n "$url" ] || { echo "Parse failed" >&2; exit 1; }
-[ "$(cat "$install_root/.linuxcapable-version" 2>/dev/null)" = "$ver" ] && [ -x "$install_root/Antigravity-IDE/antigravity-ide" ] && [ -f "$desktop_file" ] && [ -f "$icon_file" ] && { printf 'Already installed: %s\n' "$ver"; exit 0; }
-echo "Downloading IDE $ver..."; curl -fsSL --retry 3 -o "$tmpdir/arc.tar.gz" "$url"
-tar -xzf "$tmpdir/arc.tar.gz" -C "$tmpdir"; [ -x "$tmpdir/Antigravity IDE/antigravity-ide" ] || { echo "Binary not found" >&2; exit 1; }
+
+if [ -L "$command_link" ]; then
+    t=$(readlink -f "$command_link" || true)
+    case "$t" in "$install_root"/*) ;; *) echo "Bad link" >&2; exit 1 ;; esac
+elif [ -e "$command_link" ]; then
+    echo "Exists" >&2; exit 1
+fi
+
+tmpdir=$(mktemp -d "${TMPDIR:-/var/tmp}/antigravity-ide.XXXXXX")
+trap 'rm -rf "$tmpdir"' EXIT
+
+# Get latest release info
+release_info=$(curl -fsSL --compressed --retry 3 "$IDE_API")
+version=$(echo "$release_info" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['version'])")
+execution_id=$(echo "$release_info" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['execution_id'])")
+
+[ -n "$version" ] && [ -n "$execution_id" ] || { echo "Failed to get release info" >&2; exit 1; }
+
+url="https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/${version}-${execution_id}/${platform}/Antigravity%20IDE.tar.gz"
+
+# Check if already installed
+if [ "$(cat "$install_root/.linuxcapable-version" 2>/dev/null)" = "$version" ] && [ -x "$install_root/Antigravity-IDE/antigravity-ide" ] && [ -f "$desktop_file" ] && [ -f "$icon_file" ]; then
+    printf 'Already installed: %s\n' "$version"
+    exit 0
+fi
+
+echo "Downloading IDE $version..."
+curl -fsSL --retry 3 -o "$tmpdir/arc.tar.gz" "$url"
+tar -xzf "$tmpdir/arc.tar.gz" -C "$tmpdir"
+[ -x "$tmpdir/Antigravity IDE/antigravity-ide" ] || { echo "Binary not found" >&2; exit 1; }
 [ -f "$tmpdir/Antigravity IDE/resources/app/resources/linux/code.png" ] || { echo "Icon not found" >&2; exit 1; }
-rm -rf "${install_root}.new"; mkdir -p "${install_root}.new/Antigravity-IDE"
-cp -a "$tmpdir/Antigravity IDE/." "${install_root}.new/Antigravity-IDE/"; echo "$ver" >"${install_root}.new/.linuxcapable-version"
-if [ -f "${install_root}.new/Antigravity-IDE/chrome-sandbox" ]; then chown root:root "${install_root}.new/Antigravity-IDE/chrome-sandbox"; chmod 4755 "${install_root}.new/Antigravity-IDE/chrome-sandbox"; fi
+
+rm -rf "${install_root}.new"
+mkdir -p "${install_root}.new/Antigravity-IDE"
+cp -a "$tmpdir/Antigravity IDE/." "${install_root}.new/Antigravity-IDE/"
+echo "$version" >"${install_root}.new/.linuxcapable-version"
+
+if [ -f "${install_root}.new/Antigravity-IDE/chrome-sandbox" ]; then
+    chown root:root "${install_root}.new/Antigravity-IDE/chrome-sandbox"
+    chmod 4755 "${install_root}.new/Antigravity-IDE/chrome-sandbox"
+fi
+
 [ -d "$install_root" ] && { rm -rf "${install_root}.previous"; mv "$install_root" "${install_root}.previous"; }
-mv "${install_root}.new" "$install_root"; ln -sfn "$install_root/Antigravity-IDE/antigravity-ide" "$command_link"
-mkdir -p "$(dirname "$icon_file")"; install -m 0644 "$tmpdir/Antigravity IDE/resources/app/resources/linux/code.png" "$icon_file"
+mv "${install_root}.new" "$install_root"
+ln -sfn "$install_root/Antigravity-IDE/antigravity-ide" "$command_link"
+
+mkdir -p "$(dirname "$icon_file")"
+install -m 0644 "$tmpdir/Antigravity IDE/resources/app/resources/linux/code.png" "$icon_file"
+
 tee "$desktop_file" >/dev/null <<DESKTOP
 [Desktop Entry]
 Name=Antigravity IDE
@@ -218,9 +314,10 @@ MimeType=x-scheme-handler/antigravity-ide;application/x-antigravity-workspace;
 StartupNotify=true
 StartupWMClass=antigravity-ide
 DESKTOP
+
 update-desktop-database /usr/share/applications 2>/dev/null || true
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
-printf 'Installed Antigravity IDE %s\n' "$ver"
+printf 'Installed Antigravity IDE %s\n' "$version"
 HELPER
         sudo chmod +x /usr/local/bin/update-antigravity-ide
     fi
@@ -409,10 +506,10 @@ install_submenu() {
         echo ""
         read -p "Please enter your choice (1-5): " choice
         case $choice in
-            1) install_desktop ;;
-            2) install_ide ;;
-            3) install_cli ;;
-            4) install_all ;;
+            1) install_desktop || true ;;
+            2) install_ide || true ;;
+            3) install_cli || true ;;
+            4) install_all || true ;;
             5) return ;;
             *) print_error "Invalid choice!" ;;
         esac
@@ -436,7 +533,7 @@ uninstall_submenu() {
             1)
                 if check_desktop_installed; then
                     read -p "Remove desktop app? (y/N): " -n 1 -r; echo
-                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_desktop
+                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_desktop || true
                 else
                     print_warning "Desktop app is not installed."
                 fi
@@ -444,7 +541,7 @@ uninstall_submenu() {
             2)
                 if check_ide_installed; then
                     read -p "Remove IDE? (y/N): " -n 1 -r; echo
-                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_ide
+                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_ide || true
                 else
                     print_warning "IDE is not installed."
                 fi
@@ -452,12 +549,12 @@ uninstall_submenu() {
             3)
                 if check_cli_installed; then
                     read -p "Remove CLI? (y/N): " -n 1 -r; echo
-                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_cli
+                    [[ $REPLY =~ ^[Yy]$ ]] && uninstall_cli || true
                 else
                     print_warning "CLI is not installed."
                 fi
                 ;;
-            4) uninstall_all ;;
+            4) uninstall_all || true ;;
             5) return ;;
             *) print_error "Invalid choice!" ;;
         esac
@@ -478,13 +575,13 @@ update_submenu() {
         echo ""
         read -p "Please enter your choice (1-5): " choice
         case $choice in
-            1) update_desktop ;;
-            2) update_ide ;;
-            3) update_cli ;;
+            1) update_desktop || true ;;
+            2) update_ide || true ;;
+            3) update_cli || true ;;
             4)
-                update_desktop
-                update_ide
-                update_cli
+                update_desktop || true
+                update_ide || true
+                update_cli || true
                 ;;
             5) return ;;
             *) print_error "Invalid choice!" ;;

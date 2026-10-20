@@ -312,20 +312,20 @@ if command -v nvm >/dev/null 2>&1; then    echo "✅ NVM loaded"
   sudo chown -R "$SETUP_USER":"$SETUP_USER" "$USER_HOME/.nvm" 2>/dev/null || true
 
   if command -v npm >/dev/null 2>&1; then
-    # Allow postinstall scripts for packages we install
-    CURRENT_ALLOW=$(npm config get allow-scripts --location=user 2>/dev/null || echo "")
-    PACKAGES="cline,opencode-ai,@kilocode/cli"
-    if [[ -n "$CURRENT_ALLOW" && "$CURRENT_ALLOW" != "null" ]]; then
-      # Merge with existing allow-scripts, deduplicate
-      MERGED=$(echo "$CURRENT_ALLOW,$PACKAGES" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
-    else
-      MERGED="$PACKAGES"
-    fi
-    npm config set allow-scripts "$MERGED" --location=user 2>/dev/null || true
+    # # Allow postinstall scripts for packages we install
+    # CURRENT_ALLOW=$(npm config get allow-scripts --location=user 2>/dev/null || echo "")
+    # PACKAGES="cline,@opencode/cli,@kilocode/cli"
+    # if [[ -n "$CURRENT_ALLOW" && "$CURRENT_ALLOW" != "null" ]]; then
+    #   # Merge with existing allow-scripts, deduplicate
+    #   MERGED=$(echo "$CURRENT_ALLOW,$PACKAGES" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
+    # else
+    #   MERGED="$PACKAGES"
+    # fi
+    # npm config set allow-scripts "$MERGED" --location=user 2>/dev/null || true
 
     echo "🤖 Installing AI CLI tools..."
     npm install -g cline || true
-    npm install -g opencode-ai || true
+    npm install -g @opencode/cli || true
     npm install -g @kilocode/cli || true
 
     echo "🅰️ Installing Angular CLI..."
