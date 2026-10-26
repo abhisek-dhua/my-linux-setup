@@ -7,32 +7,39 @@ This is my personal VS Code settings configuration optimized for web development
 ```json
 {
   // editor customization
+  "git.autofetch": true,
   "editor.wordWrap": "on",
   "git.confirmSync": false,
-  "chat.agent.enabled": false,
   "editor.formatOnSave": true,
   "editor.fontLigatures": true,
   "editor.linkedEditing": true,
-  "chat.disableAIFeatures": true,
+  "workbench.colorTheme": "Dark+",
   "gitlens.codeLens.enabled": false,
   "editor.cursorBlinking": "expand",
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
-  "editor.inlineSuggest.enabled": false,
+  "editor.inlineSuggest.enabled": true,
   "editor.guides.bracketPairs": "active",
   "cSpell.userWords": ["Abhisek", "Dhua"],
   "js/ts.updateImportsOnPaste.enabled": true,
   "workbench.iconTheme": "material-icon-theme",
   "liveServer.settings.donotShowInfoMsg": true,
+  "git.openRepositoryInParentFolders": "always",
   "editor.bracketPairColorization.enabled": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
   "terminal.integrated.defaultProfile.linux": "zsh",
   "terminal.integrated.sendKeybindingsToShell": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "js/ts.updateImportsOnFileMove.enabled": "always",
   "workbench.secondarySideBar.defaultVisibility": "hidden",
   "terminal.integrated.defaultProfile.windows": "PowerShell",
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
   "editor.fontFamily": "'FiraCode Nerd Font', Consolas, 'Courier New', monospace",
+  // copilot ai chat
+  "chat.mcp.gallery.enabled": true,
+  "chat.viewSessions.orientation": "stacked",
+  "chat.mcp.discovery.enabled": {
+    "cursor-global": true
+  },
   // prettier customization
   "prettier.semi": true,
   "prettier.tabWidth": 2,
@@ -41,7 +48,6 @@ This is my personal VS Code settings configuration optimized for web development
   "prettier.printWidth": 100,
   "prettier.singleQuote": true,
   "prettier.trailingComma": "all",
-  "workbench.colorTheme": "Dark+",
   "prettier.bracketSpacing": true,
   "prettier.arrowParens": "always",
   "prettier.bracketSameLine": true,
@@ -51,9 +57,9 @@ This is my personal VS Code settings configuration optimized for web development
   // vscode workbench customization
   "workbench.colorCustomizations": {
     "statusBar.background": "#2d2d2d",
-    "statusBar.noFolderBackground": "#2d2d2d",
-    "statusBar.debuggingBackground": "#c74e39",
-    "statusBar.foreground": "#cccccc"
+    "statusBar.foreground": "#cccccc",
+    "statusBar.inactiveBackground": "#2d2d2d",
+    "statusBar.noFolderBackground": "#2d2d2d"
   },
   "editor.tokenColorCustomizations": {
     "textMateRules": [
@@ -73,14 +79,14 @@ This is my personal VS Code settings configuration optimized for web development
           "constant.language",
           "entity.name.method",
           "entity.name.function",
-          "entity.other.attribute-name",
           "keyword.control.flow.js",
           "keyword.control.from.js",
           "keyword.control.from.ts",
           "keyword.control.from.tsx",
-          "keyword.control.import.js",
           "keyword.control.import.ts",
-          "keyword.control.import.tsx"
+          "keyword.control.import.js",
+          "keyword.control.import.tsx",
+          "entity.other.attribute-name"
         ],
         "settings": {
           "fontStyle": "italic"
@@ -126,13 +132,11 @@ This is my personal VS Code settings configuration optimized for web development
   },
   // trusted json schemas
   "json.schemaDownload.trustedDomains": {
-    "https://models.dev": true,
-    "https://opencode.ai": true,
     "https://turbo.build": true,
     "https://json-schema.org/": true,
     "https://www.schemastore.org/": true,
     "https://json.schemastore.org/": true,
-    "https://developer.microsoft.com/": true,
+    "https://opencode.ai/config.json": true,
     "https://raw.githubusercontent.com/": true,
     "https://schemastore.azurewebsites.net/": true
   }

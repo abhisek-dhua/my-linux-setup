@@ -59,6 +59,71 @@ check_service_exists() {
     fi
 }
 
+# Verify that Ollama is fully uninstalled (binary, config, cache, processes, services)
+verify_uninstall() {
+    local issues=0
+    print_status "Verifying Ollama uninstall..."
+
+    # Check binary
+    if command -v ollama >/dev/null 2>&1; then
+        print_error "  [FAIL] Ollama binary still in PATH: $(which ollama)"
+        issues=$((issues + 1))
+    else
+        print_status "  [OK]   Ollama binary not in PATH"
+    fi
+
+    # Check config/data directories
+    local dirs=(
+        "$HOME/.ollama"
+        "$HOME/.cache/ollama"
+        "/usr/share/ollama"
+        "/var/lib/ollama"
+        "/var/cache/ollama"
+        "/etc/ollama"
+    )
+    for dir in "${dirs[@]}"; do
+        if [ -e "$dir" ]; then
+            print_error "  [FAIL] Leftover directory still exists: $dir"
+            issues=$((issues + 1))
+        fi
+    done
+    if [ $issues -eq 0 ] || [ "$issues" -le 1 ]; then
+        # only count the binary if no dirs were found; re-check dirs cleanly
+        local dir_issues=0
+        for dir in "${dirs[@]}"; do
+            [ -e "$dir" ] && dir_issues=$((dir_issues + 1))
+        done
+        if [ $dir_issues -eq 0 ]; then
+            print_status "  [OK]   No leftover config/cache directories"
+        fi
+    fi
+
+    # Check systemd services
+    if systemctl list-unit-files 2>/dev/null | grep -q '^ollama\.service'; then
+        print_error "  [FAIL] systemd service unit still registered"
+        issues=$((issues + 1))
+    else
+        print_status "  [OK]   No systemd service registered"
+    fi
+
+    # Check running processes
+    if pgrep -f 'ollama' >/dev/null 2>&1; then
+        print_error "  [FAIL] Ollama process still running"
+        issues=$((issues + 1))
+    else
+        print_status "  [OK]   No Ollama processes running"
+    fi
+
+    echo
+    if [ $issues -eq 0 ]; then
+        print_status "Ollama is fully uninstalled (no binary, config, cache, or processes found)."
+        return 0
+    else
+        print_warning "Ollama uninstall is incomplete: $issues issue(s) detected."
+        return 1
+    fi
+}
+
 # Install Ollama
 install_ollama() {
     print_status "Installing Ollama..."
